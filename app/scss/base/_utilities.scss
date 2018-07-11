@@ -1,6 +1,12 @@
 .text-center{
 	text-align: center!important;
 }
+.text-right{
+    text-align: right!important;
+}
+.text-left{
+    text-align: left!important;
+}
 
 .clear-fix{
     overflow: auto;
@@ -12,6 +18,9 @@
 }
 .pb-2{
     padding-bottom: 2rem!important;
+}
+.mb-4{
+    margin-bottom: 4rem!important;
 }
 .pb-3{
     padding-bottom: 3rem!important;

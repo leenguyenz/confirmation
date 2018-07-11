@@ -13,10 +13,11 @@ body{
 	outline: none;
 	font-family:$font-body;
 	font-weight: 400;
-	color: $color-grey-dark-1;
+	// color: $color-grey-dark-1;
 	font-size: $font-size-main;
 	line-height: $line-height-main;
 	text-decoration: none;
+	padding: 2rem;
 }
 h1,h2,h3,h4,h5,h6{
 	text-transform: capitalize;
@@ -31,3 +32,14 @@ a:hover{
 	text-decoration: none;
 }
 a:active{color: $color-main;}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	// border: 1px solid $color-grey-light-4;
+}
+
+// table td, table th {
+// 	border: 1px solid $color-grey-light-4;
+// 	padding: 1rem;
+// }
