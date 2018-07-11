@@ -1,0 +1,12 @@
+doctype html
+html
+	head
+		title= title
+		block meta_end
+			include ../block/_meta
+		block head_end
+			include ../block/_style
+body
+	block content
+	block body_end
+		include ../block/_script

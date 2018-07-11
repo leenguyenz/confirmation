@@ -1,0 +1,33 @@
+*,
+*:before,
+*:after{
+	margin: 0;
+	padding: 0;
+	box-sizing: inherit;
+}
+html{
+	box-sizing: border-box;
+	font-size: 62.5%;
+}
+body{
+	outline: none;
+	font-family:$font-body;
+	font-weight: 400;
+	color: $color-grey-dark-1;
+	font-size: $font-size-main;
+	line-height: $line-height-main;
+	text-decoration: none;
+}
+h1,h2,h3,h4,h5,h6{
+	text-transform: capitalize;
+}
+/*======link=======*/
+a:link{
+	text-decoration: none;
+	outline: none;
+	text-transform: capitalize;
+}
+a:hover{
+	text-decoration: none;
+}
+a:active{color: $color-main;}

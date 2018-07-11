@@ -1,0 +1,12 @@
+extends pug/layouts/_home
+
+block head_end
+    include pug/block/_style
+    
+block content
+    #homepage
+        include pug/partials/_header
+        include pug/pages/_confirm
+        include pug/partials/_footer
+block body_end
+    include pug/block/_script
