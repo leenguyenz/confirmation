@@ -17,29 +17,18 @@ body{
 	font-size: $font-size-main;
 	line-height: $line-height-main;
 	text-decoration: none;
-	padding: 2rem;
+	padding: 5rem;
 }
-h1,h2,h3,h4,h5,h6{
-	text-transform: capitalize;
-}
-/*======link=======*/
-a:link{
-	text-decoration: none;
-	outline: none;
-	text-transform: capitalize;
-}
-a:hover{
-	text-decoration: none;
-}
-a:active{color: $color-main;}
 
+/*======table=======*/
 table {
 	border-collapse: collapse;
 	width: 100%;
-	// border: 1px solid $color-grey-light-4;
+	margin: auto;
 }
-
-// table td, table th {
-// 	border: 1px solid $color-grey-light-4;
-// 	padding: 1rem;
-// }
+table th {
+	padding: 0.7rem;
+}
+table td{
+	padding: 1.5rem;
+}

@@ -1,0 +1,66 @@
+#wrapper{
+    overflow-x: auto;
+}
+.logo-brand{
+    &__image{
+        border-bottom: 1px solid $color-grey-light-4;
+        display: block;
+    }
+    
+}
+.guest-box{
+    & th {
+        text-align: left;
+    }
+    & > thead>tr > th,& > tbody>tr > td {
+        border: 1px solid $color-grey-light-4;
+    }
+}
+
+.flight-detail{
+    & > thead > tr > th {
+        color: $color-main;
+        font-size: 2.5rem;
+    }
+    &__item{
+        & > thead > tr > th {
+            background: $color-main;
+            text-align: left;
+            font-size: 1.7rem;
+            color: $color-white;
+            border-bottom: 1px solid $color-grey-dark-1;
+        }
+        & td {
+            background: $color-grey-light-2;
+        }
+    }
+    &__sub{
+        & th {
+            text-align: left;
+        }
+        &,& td {
+            background: $color-white;
+        }
+        i{
+            display: block;
+            font-size: 5rem;
+            color: $color-main;
+            padding-bottom: 1rem;
+        }
+    }
+}
+
+.price-summary{
+    & tr {
+        border: 1px solid $color-grey-light-4;
+    }
+}
+.text-large{
+    font-size: 1.6rem;
+}
+.text-primary{
+    color: cornflowerblue;
+}
+.text-main{
+    color: $color-main!important;
+}

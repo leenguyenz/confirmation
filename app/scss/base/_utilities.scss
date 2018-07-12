@@ -11,25 +11,61 @@
 .clear-fix{
     overflow: auto;
 }
+.border-fade{
+    border: 1px solid $color-grey-light-4;
+    border-bottom: none!important;
+}
+.border-muted{
+    border: none!important;
+}
+.border-right{
+    border-right: 3px solid $color-grey-light-2;
+}
+.bg-fade{
+    background: $color-grey-light-2!important;
+}
 
-//padding-bottom
+.bg-main{
+    background: $color-main;
+}
+
+.bg-muted{
+    background: none!important;
+}
+
+//padding bottom
+.p-0{
+    padding: 0!important;
+}
+
 .pb-1{
     padding-bottom: 1rem!important;
 }
 .pb-2{
     padding-bottom: 2rem!important;
 }
-.mb-4{
-    margin-bottom: 4rem!important;
-}
 .pb-3{
     padding-bottom: 3rem!important;
 }
-.pb-4{
-    padding-bottom: 4rem!important;
+
+.pl-1{
+    padding-left: 1em;
 }
-.pb-5{
-    padding-bottom: 5rem!important;
+.pl-2{
+    padding-left: 2em;
+}
+.pl-3{
+    padding-left: 3em;
+}
+//margin bottom
+.mb-1{
+    margin-bottom: 1rem!important;
+}
+.mb-2{
+    margin-bottom: 2rem!important;
+}
+.mb-3{
+    margin-bottom: 3rem!important;
 }
 
 //padding-top
@@ -42,9 +78,4 @@
 .pt-3{
     padding-top: 3rem!important;
 }
-.pt-4{
-    padding-top: 4rem!important;
-}
-.pt-5{
-    padding-top: 5rem!important;
-}
+

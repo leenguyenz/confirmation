@@ -1,38 +1,52 @@
-table.mb-4
+table.logo-brand
 	thead
 		tr
-			th(colspan="2").text-left Holiday Voucher
-	tbody
-		tr
-			td Voucher Number: EYH000118
-			td Booking Date: 10/07/2018
-table
+			th.logo-brand__image.pb-2.mb-2
+				img(src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&siteid=1257", alt="AirAsiaGo")
+table.guest-box
 	thead
 		tr
-			th Flight Itinerary
-			th Booking Reference / PNR : HIRABW
+			th(colspan="2").bg-fade Holiday Voucher
 	tbody
 		tr
 			td
-				table
+				strong Voucher Number : 
+				| EYH000118
+			td 
+				strong Booking Date : 
+				| 10/07/2018
+table.flight-detail
+	thead
+		tr
+			th.text-left Flight Itinerary
+			//- th.text-right Booking Reference
+	tbody
+		tr
+			td
+				table.flight-detail__item
 					thead
-						th(colspan="2") Itinerary
+						tr
+							th Itinerary
 					tbody
 						tr
 							td
-								table
+								table.flight-detail__sub
 									thead
 										tr
 											th Departure
 									tbody
 										tr
-											td Wednesday, 11 Jul 2018
-											td EY 408
-											td Depart: Abu Dhabi International Airport, United Arab Emirates 09:50
-											td Arrive: Bangkok Suvarnabhumi Airport, Thailand 19:25
+											td Monday, 30 Jul 2018 
+											td EY 407
+											td 
+												strong Depart : 
+												| Bangkok Suvarnabhumi Airport, Thailand 02:10
+											td 
+												strong Arrive : 
+												| Abu Dhabi International Airport, United Arab Emirates 05:40
 						tr
 							td
-								table
+								table.flight-detail__sub
 									thead
 										tr
 											th Return
@@ -40,17 +54,22 @@ table
 										tr
 											td Monday, 30 Jul 2018 
 											td EY 407
-											td Depart: Bangkok Suvarnabhumi Airport, Thailand 02:10
-											td Arrive: Abu Dhabi International Airport, United Arab Emirates 05:40
+											td 
+												strong Depart :
+												| Bangkok Suvarnabhumi Airport, Thailand 02:10
+											td 
+												strong Arrive :
+												| Abu Dhabi International Airport, United Arab Emirates 05:40
 		tr
 			td
-				table
+				table.flight-detail__item
 					thead
-						th(colspan="2") Guest Details
+						tr
+							th(colspan="2") Guest Details
 					tbody
 						tr
-							td
-								table
+							td.p-0
+								table.guest-box
 									thead
 										tr
 											th Guest
@@ -63,45 +82,238 @@ table
 											th Insurance
 									tbody
 										tr
-											td Mr. Lee
-											td 6072135384277
+											td(rowspan="2") Mr. Lee
+											td(rowspan="2") 6072135384277
 											td 408
 											td -
 											td 0 kg
 											td No
 											td -
+											td(rowspan="2") No
+										tr
+											td 407
+											td -
+											td 0 kg
 											td No
+											td -
 		tr
 			td
-				table
+				table.flight-detail__item
 					thead
-						th(colspan="2") Check-in times
+						tr
+							th(colspan="2") Check-in times
 					tbody
 						tr
 							td
-								table
+								table.flight-detail__sub.text-center
 									tr
 										td
 											i.fa.fa-suitcase
-											span Carry On Baggage
+											strong Carry On Baggage
+											p 40 minutes before departure
 										td
-											i.fa.fa-suitcase
-											span Carry On Baggage
+											i.fa.fa-male
+											strong Carry On Baggage
+											p 40 minutes before departure
 										td
-											i.fa.fa-suitcase
-											span Carry On Baggage
+											i.fa.fa-check
+											strong Carry On Baggage
+											p 40 minutes before departure
 										td
-											i.fa.fa-suitcase
-											span Carry On Baggage
+											i.fa.fa-times
+											strong Carry On Baggage
+											p 40 minutes before departure
 										td
-											i.fa.fa-suitcase
-											span Carry On Baggage
+											i.fa.fa-plane
+											strong Carry On Baggage
+											p 40 minutes before departure
 		tr
 			td
-				table
+				table.flight-detail__item
 					thead
-						th(colspan="2") Important Remider
+						tr
+							th(colspan="2") Important Remider
 					tbody
 						tr
 							td
-								span Before your flight, here’s some information to keep you worry-free:
+								table.flight-detail__sub
+									tr
+										td
+											strong Before your flight, here’s some information to keep you worry-free:
+											p Each guest is allowed one cabin bag with a maximum weight of 7kg, plus one personal item. Any excess weight or items will have to be checked in, and checked baggage fees will apply. Hong Kong International Airport check-in counters open 3 hours prior to and close 1 hour before scheduled time of departure. Airport Express in-town check-in opens 1 day prior to and closes 1.5 hours before scheduled time of departure.
+table.flight-detail
+	thead
+		tr
+			th.text-left Hotel Confirmations
+			//- th.text-right BookingID: gq-n9zjg8z1syydcrk / EYH000118
+	tbody
+		tr
+			td
+				table.flight-detail__item
+					thead
+						tr
+							th Hotel Details
+					tbody
+						tr
+							td
+								table.flight-detail__sub
+										tr
+											td(width="10%") Hotel Name:
+											td
+												strong @Sleep Walk
+										tr
+											td(width="10%") Hotel Name:
+											td
+												strong 1112/128-129 Sukhumvit Rd.
+						tr
+							td
+								table.flight-detail__item
+									thead
+										tr
+											th.bg-fade.border-fade.text-main Room details 1
+									tbody
+										tr
+											td.p-0.bg-fade
+												table.guest-box
+														tr
+															td(width="20%")
+																strong Room Type
+															td Sleep Tight
+														tr
+															td(width="20%")
+																strong Number of Guest / Room
+															td 1 Adult
+														tr
+															td(width="20%")
+																strong Board Basis
+															td Room Only
+														tr
+															td(width="20%")
+																strong Room Confirmation Number
+															td 311910709 ~~ 1234
+														tr
+															td(width="20%")
+																strong Cancellation Policy
+															td This booking is Non-Refundable and cannot be amended or modified. Failure to arrive at your hotel will be treated as a No-Show and no refund will be given (Hotel policy)
+		tr
+			td
+				table.flight-detail__item
+					thead
+						tr
+							th Guest Details
+					tbody
+						tr
+							td
+								table.flight-detail__sub
+									thead
+										tr
+											th
+											th Names
+											th Guest Type
+									tbody
+										tr
+											td(width="5%") 1.
+											td Mr. Lee
+											td Adult
+		tr
+			td
+				table.flight-detail__item
+					thead
+						tr
+							th Hotel Cancellation Policy
+					tbody
+						tr
+							td
+								span This booking is Non-Refundable and cannot be amended or modified. Failure to arrive at your hotel will be treated as a No-Show and no refund will be given (Hotel policy).
+		tr
+			td
+				table.price-summary
+					thead
+						tr
+							th(colspan="3").text-left.bg-fade Price Summary
+					tbody
+						tr
+							td Flight + Hotel
+							td AED
+							td 4,266
+						tr
+							td(colspan="2") Activities 
+							td N/A
+						tr
+							td(colspan="2") Transfer 
+							td N/A
+						tr
+							td Seats 
+							td AED
+							td 427
+						tr
+							td(colspan="2") Meals
+							td N/A
+						tr
+							td Baggage
+							td AED
+							td 4,266
+						tr
+							td.text-large
+								strong Total Amount
+							td 
+								strong AED
+							td 
+								strong 4,693
+						tr
+							td.text-large
+								strong Payment Amount
+							td 
+								strong MYR
+							td 
+								strong 5,115
+		tr
+			td
+				table.flight-detail__item
+					thead
+						tr
+							th Payment Detail
+					tbody
+						tr
+							td
+								table.flight-detail__sub
+									tr
+										td Mode of Payment: Visa ending in 1111
+									tr
+										td Payment Date: Tue, 10 Jul 2018
+									tr
+										td.text-large
+											strong Total: AED 4,693
+									tr
+										td.text-primary Average total amount per person : AED 4,693
+									tr
+										td.text-primary Voucher issued date: 10 Jul 2018
+		tr
+			td
+				table.flight-detail__item
+					thead
+						tr
+							th.bg-fade.border-muted Got a Questions?
+					tbody
+						tr
+							td
+								table.flight-detail__sub
+									tr
+										td.border-right
+											p For any general enquiries regarding to your package booking please contact our dedicated holidays hotline.
+											p U-FLY Package Holidays Call center (Hong Kong)
+											p
+												strong Working Hours - 08:00 - 24:00
+												ul.pl-3.pt-1
+													li Phone: +852 3692 2099
+													li E-mail: askus@uflyholidays.com
+										td 
+											p If you have an Emergency related to your hotel booking please contact our holiday partner, GoQuo.
+											p GoQuo emergency contact (Malaysia)
+											p
+												strong Working hours - 24 hours
+												ul.pl-3.pt-1
+													li Phone / Whatsapp: +6012 222 6091 / +62-815 8153857
+													li E-mail : ops@goquo.com
+													li Skype : goquo.operation
+
