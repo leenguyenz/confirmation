@@ -18,11 +18,11 @@ table.guest-box
 table.flight-detail
 	thead
 		tr
-			th.text-left Flight Itinerary
-			//- th.text-right Booking Reference
+			th.flight-detail__title.text-left Flight Itinerary
+			th.flight-detail__booking.text-right Booking Reference / PNR : HIRABW
 	tbody
 		tr
-			td
+			td(colspan="2")
 				table.flight-detail__item
 					thead
 						tr
@@ -40,10 +40,10 @@ table.flight-detail
 											td EY 407
 											td 
 												strong Depart : 
-												| Bangkok Suvarnabhumi Airport, Thailand 02:10
+												|  Bangkok Suvarnabhumi Airport, Thailand 02:10
 											td 
 												strong Arrive : 
-												| Abu Dhabi International Airport, United Arab Emirates 05:40
+												|  Abu Dhabi International Airport, United Arab Emirates 05:40
 						tr
 							td
 								table.flight-detail__sub
@@ -61,7 +61,7 @@ table.flight-detail
 												strong Arrive :
 												| Abu Dhabi International Airport, United Arab Emirates 05:40
 		tr
-			td
+			td(colspan="2")
 				table.flight-detail__item
 					thead
 						tr
@@ -97,7 +97,7 @@ table.flight-detail
 											td No
 											td -
 		tr
-			td
+			td(colspan="2")
 				table.flight-detail__item
 					thead
 						tr
@@ -128,7 +128,7 @@ table.flight-detail
 											strong Carry On Baggage
 											p 40 minutes before departure
 		tr
-			td
+			td(colspan="2")
 				table.flight-detail__item
 					thead
 						tr
@@ -144,11 +144,11 @@ table.flight-detail
 table.flight-detail
 	thead
 		tr
-			th.text-left Hotel Confirmations
-			//- th.text-right BookingID: gq-n9zjg8z1syydcrk / EYH000118
+			th.flight-detail__title.text-left Hotel Confirmations
+			th.flight-detail__booking.text-right BookingID: gq-n9zjg8z1syydcrk / EYH000118
 	tbody
 		tr
-			td
+			td(colspan="2")
 				table.flight-detail__item
 					thead
 						tr
@@ -196,7 +196,7 @@ table.flight-detail
 																strong Cancellation Policy
 															td This booking is Non-Refundable and cannot be amended or modified. Failure to arrive at your hotel will be treated as a No-Show and no refund will be given (Hotel policy)
 		tr
-			td
+			td(colspan="2")
 				table.flight-detail__item
 					thead
 						tr
@@ -216,7 +216,7 @@ table.flight-detail
 											td Mr. Lee
 											td Adult
 		tr
-			td
+			td(colspan="2")
 				table.flight-detail__item
 					thead
 						tr
@@ -226,7 +226,7 @@ table.flight-detail
 							td
 								span This booking is Non-Refundable and cannot be amended or modified. Failure to arrive at your hotel will be treated as a No-Show and no refund will be given (Hotel policy).
 		tr
-			td
+			td(colspan="2")
 				table.price-summary
 					thead
 						tr
@@ -268,7 +268,7 @@ table.flight-detail
 							td 
 								strong 5,115
 		tr
-			td
+			td(colspan="2")
 				table.flight-detail__item
 					thead
 						tr
@@ -289,14 +289,14 @@ table.flight-detail
 									tr
 										td.text-primary Voucher issued date: 10 Jul 2018
 		tr
-			td
+			td(colspan="2")
 				table.flight-detail__item
 					thead
 						tr
-							th.bg-fade.border-muted Got a Questions?
+							th.bg-gray.border-muted Got a Questions?
 					tbody
 						tr
-							td
+							td.bg-gray
 								table.flight-detail__sub
 									tr
 										td.border-right
@@ -307,7 +307,7 @@ table.flight-detail
 												ul.pl-3.pt-1
 													li Phone: +852 3692 2099
 													li E-mail: askus@uflyholidays.com
-										td 
+										td
 											p If you have an Emergency related to your hotel booking please contact our holiday partner, GoQuo.
 											p GoQuo emergency contact (Malaysia)
 											p

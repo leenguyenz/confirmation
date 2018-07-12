@@ -18,6 +18,9 @@
         color: $color-main;
         font-size: 2.5rem;
     }
+    &__booking{
+        font-size: 1.8rem!important;
+    }
     &__item{
         & > thead > tr > th {
             background: $color-main;

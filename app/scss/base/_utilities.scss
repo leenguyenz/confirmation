@@ -7,7 +7,6 @@
 .text-left{
     text-align: left!important;
 }
-
 .clear-fix{
     overflow: auto;
 }
@@ -19,10 +18,14 @@
     border: none!important;
 }
 .border-right{
-    border-right: 3px solid $color-grey-light-2;
+    border-right: 3px solid $color-grey-dark-2!important;
 }
 .bg-fade{
     background: $color-grey-light-2!important;
+}
+
+.bg-gray{
+    background: $color-grey-dark-2!important;
 }
 
 .bg-main{
@@ -37,7 +40,6 @@
 .p-0{
     padding: 0!important;
 }
-
 .pb-1{
     padding-bottom: 1rem!important;
 }
