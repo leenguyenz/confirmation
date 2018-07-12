@@ -1,12 +1,8 @@
-#wrapper{
-    overflow-x: auto;
-}
 .logo-brand{
     &__image{
         border-bottom: 1px solid $color-grey-light-4;
         display: block;
-    }
-    
+    } 
 }
 .guest-box{
     & th {
