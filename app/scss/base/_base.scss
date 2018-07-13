@@ -13,7 +13,7 @@ body{
 	outline: none;
 	font-family:$font-body;
 	font-weight: 400;
-	// color: $color-grey-dark-1;
+	color: $color-grey-dark-1;
 	font-size: $font-size-main;
 	line-height: $line-height-main;
 	text-decoration: none;
@@ -27,5 +27,5 @@ table {
 	margin: auto;
 }
 table th, table td{
-	padding: 1.2rem;
+	padding: 0.8rem;
 }

@@ -1,18 +1,35 @@
 .logo-brand{
+    border-bottom: 4px solid $color-main;
     &__image{
-        border-bottom: 1px solid #ccc;
-        display: block;
-    } 
+        text-align: left;
+        img{
+            max-width: 30rem;
+        }
+    }
+    &__title{
+        text-align: right;
+        color: $color-main;
+        font-size: 2.2rem;
+    }
 }
 .guest-box{
     & th {
         text-align: left;
     }
-    & > thead>tr > th,& > tbody>tr > td {
+    & > thead>tr > th {
+        color: $color-main;
+        font-size: 1.6rem;
+        padding-left: 0;
+    }
+    & > tbody>tr > td {
         border: 1px solid #ccc;
     }
+    &__item{
+        & th{
+            background: $color-grey-light-4;
+        }
+    }
 }
-
 .flight-detail{
     & > thead > tr > th {
         color: #e32726;
