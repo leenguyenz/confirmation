@@ -1,11 +1,22 @@
-<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
-<style type="text/css">
-:root{
-    --color-main: #e32726;
-    --color-grey-light: #ccc;
-    --color-grey-lighter: #f4f2f2;
-    --color-grey-dark: #333;
+@using System.Globalization
+@using GoQuoEngine.Data.Domain
+@using GoQuoEngine.Flights
+@using GoQuoEngine.Hotels
+@using System.Linq
+
+@{
+    Booking booking = Model.Booking;
+    List<BookingPassengerInfo> passengerInfos = booking.Passengers.ToList();
+    BookingCustomerInfo customerInfo = booking.CustomerInfo;
+    var hotel = booking.Hotels.First();
+    var providerNames = hotel.HotelRooms.Select(h => h.ProviderName).Distinct();
+    string supplierName = String.Join(",", providerNames);
+    var isUserB2B = Model.IsB2B;
+    var isShowPriceInVoucher = booking.ShowPriceInVoucher;
+
 }
+<link href="https://fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet">
+<style type="text/css">
 *{
     margin: 0;
     padding: 0;
@@ -15,8 +26,8 @@ html{
 }
 body{
     font-family: 'Lato',Arial, Helvetica, sans-serif;
-    color: var(--color-grey-dark);
-    font-size: 1.4rem;
+    color: #333;
+    font-size: 1.5rem;
     padding: 5rem;
 }
 table {
@@ -27,16 +38,23 @@ table th, table td {
     padding: 0.8rem;
 }
 .text-large{
-    font-size: 1.6rem;
+    font-size: 1.7rem;
 }
 .text-main{
     color: #e32726!important;
 }
+.border{border: 1px solid #b1b1b1!important}
+.border-top{border-top: 1px solid #b1b1b1!important}
+.border-left-none{border-left: none!important}
+.border-right-none{border-right: none!important}
 .border-muted{
     border: none!important;
 }
+.page-break{
+    page-break-after: always;
+}
 .bg-fade{
-    background: var(--color-grey-lighter)!important;
+    background: #f3f3f3!important;
 }
 .p-0{
     padding: 0!important;
@@ -46,6 +64,9 @@ table th, table td {
 }
 .pl-2{
     padding-left: 2em;
+}
+.mb-1{
+    margin-bottom: 1rem!important;
 }
 .mb-2{
     margin-bottom: 2rem!important;
@@ -57,7 +78,8 @@ table th, table td {
     margin-bottom: 5rem!important;
 }
 .logo-brand {
-  border-bottom: 4px solid var(--color-main);;
+  border-bottom: 4px solid #e32726;
+
 }
 .logo-brand__image {
   text-align: left;
@@ -67,26 +89,28 @@ table th, table td {
 }
 .logo-brand__title {
   text-align: right;
-  color: var(--color-main);
+  color: #e32726;
   font-size: 2.2rem;
 }
-
+.guest-box h2 {
+  color: #777;
+}
 .guest-box th {
   text-align: left;
 }
 .guest-box > thead > tr > th {
-  color: var(--color-main);
+  color: #e32726;
   font-size: 1.6rem;
-  padding-left: 0;
+  padding-left: 5px;
 }
 .guest-box > tbody > tr > td {
-  border: 1px solid var(--color-grey-light);
+  border: 1px solid #b1b1b1;
 }
 .guest-box__item th {
-  background: var(--color-grey-light);
+  background: #dadada;
 }
 </style>
-<table class="logo-brand pb-2 mb-3">
+<table class="logo-brand pb-2 mb-1">
     <thead>
         <tr>
             <th class="logo-brand__image"><img src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&amp;siteid=1257" alt="AirAsiaGo" /></th>
@@ -97,73 +121,152 @@ table th, table td {
 <table class="guest-box mb-2">
     <thead>
         <tr>
-            <th colspan="2">Hotel Details</th>
+            <th colspan="2">
+               <h2 class="mb-1">Hotel Voucher</h2>
+            </th>
+        </tr>
+        <tr>
+            <th colspan="2">
+                <h3>Hotel Details</h3>
+            </th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td width="50%"><strong>Agoda Booking ID</strong></td>
-            <td class="text-main text-large"><strong>gq-y4l8rtt6qs8hx43</strong></td>
+            <td width="25%"><h4>@supplierName Booking ID</h4></td>
+            <td class="text-main text-large"><strong>@hotel.ProviderBookingReference</strong></td>
         </tr>
         <tr>
-            <td width="50%"><strong>flynas Booking No.</strong></td>
-            <td class="text-main text-large"><strong>EYH000110</strong></td>
+            <td><h4>AirAsiaGo Booking No.</h4></td>
+            <td class="text-main text-large"><strong>@booking.BookingConfirmRef</strong></td>
+        </tr>
+        @if (!string.IsNullOrEmpty(supplierName) && supplierName.ToLower().Contains("airasiago"))
+        {
+            <tr>
+                <td><h4>Important Note</h4></td>
+                <td>
+                    <p><strong>This booking is Pre-paid.</strong></p>
+                    <p>Please present this prepaid voucher and refer to AirAsiaGo booking ID upon check in. This booking is booked and payable by Airasiago.com</p>
+                    <p>GoQuo acts an agent for Airasiago</p>
+                </td>
+            </tr>
+        }
+        <tr>
+            <td><h4>Hotel Name </h4></td>
+            <td><strong>@hotel.Name</strong></td>
         </tr>
         <tr>
-            <td width="50%"><strong>Important Note</strong></td>
-            <td>
-                <p><strong>This booking is Pre-paid.</strong></p>
-                <p>Please present this prepaid voucher and refer to Agoda booking ID upon check in. This booking is booked and payable by Agoda.com</p>
+            <td><h4>Hotel Address </h4></td>
+            <td>@hotel.Address</td>
+        </tr>
+        <tr>
+            <td><h4>Hotel Contact Number </h4></td>
+            <td>@hotel.Telephone</td>
+        </tr>
+        <tr>
+            <td><h4>Supplier Name </h4></td>
+            <td>@supplierName</td>
+        </tr>
+        <tr>
+            <td><h4>Check in date </h4></td>
+            <td>@((Model.Booking.CheckIn != null && Model.Booking.CheckIn != DateTime.MinValue) ? Model.Booking.CheckIn?.ToString("dd/MM/yyyy") : Model.Booking.DepartureDate.ToString("dd/MM/yyyy"))</td>
+        </tr>
+        <tr>
+            <td><h4>Check out date </h4></td>
+            <td>@((Model.Booking.CheckOut != null && Model.Booking.CheckOut != DateTime.MinValue) ? Model.Booking.CheckOut?.ToString("dd/MM/yyyy") : Model.Booking.ReturnDate.ToString("dd/MM/yyyy"))</td>
+        </tr>
+        <tr>
+            <td><h4>Number of Nights </h4></td>
+            <td>@((@Model.Booking.ReturnDate - @Model.Booking.DepartureDate).TotalDays)</td>
+        </tr>
+        @if (!string.IsNullOrEmpty(hotel.CheckInInstructions))
+        {
+            <tr>
+                <td><h4>Check-in Instruction </h4></td>
+                <td>@Raw(hotel.CheckInInstructions)</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(hotel.SpecialCheckInInstructions))
+        {
+            <tr>
+                <td><h4>Special Check-in Structions </h4></td>
+                <td>@Raw(hotel.SpecialCheckInInstructions)</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(supplierName) && supplierName.ToLower().Contains("airasiago"))
+        {
+            <tr>
+                <td><h4>Hotel Remark </h4></td>
+                <td>@Raw(hotel.Remarks)</td>
+            </tr>
+        }
+        <tr>
+            <td class="border-muted" colspan="2">
+                <p>*Notes: These are general checkin/checkout times. Please confirm with the hotel upon checking in to avoid inconvenience</p>
             </td>
-        </tr>
-        <tr>
-            <td width="50%"><strong>Hotel Name </strong></td>
-            <td><strong>PJ De Inn</strong></td>
-        </tr>
-        <tr>
-            <td width="50%"><strong>Hotel Address </strong></td>
-            <td>4-6 , Jalan 8/1E</td>
-        </tr>
-        <tr>
-            <td class="border-muted" colspan="2">*Notes: These are general checkin/checkout times. Please confirm with the hotel upon checking in to avoid inconvenience</td>
         </tr>
     </tbody>
 </table>
-<table class="guest-box mb-2">
-    <thead>
-        <tr>
-            <th class="border" colspan="2">Room details 1</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td width="25%"><strong>Room Type</strong></td>
-            <td>Superior Double</td>
-        </tr>
-        <tr>
-            <td width="25%"><strong>Number of Guests / Room</strong></td>
-            <td>2 Adults</td>
-        </tr>
-        <tr>
-            <td width="25%"><strong>Board Basis</strong></td>
-            <td>Room Only</td>
-        </tr>
-        <tr>
-            <td width="25%"><strong>Room Confirmation Number</strong></td>
-            <td><strong>8070829</strong></td>
-        </tr>
-        <tr>
-            <td width="25%"><strong>Cancellation Policy</strong></td>
-            <td>No cancellation allowed after 20/08/2018
-                <p>* Cancellation is based on Hotel Cancellation Policy</p>
-            </td>
-        </tr>
-    </tbody>
-</table>
+@for (byte i = 0; i < hotel.HotelRooms.Count; i++)
+{
+    var availableRoom = hotel.HotelRooms.ElementAt(i);
+    <table class="guest-box mb-2">
+        <thead>
+            <tr>
+                <th class="border" colspan="2">
+                    <h3>Room details @(i + 1)</h3>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td width="25%"><h4>Room Type</h4></td>
+                <td>@availableRoom.Description</td>
+            </tr>
+            <tr>
+                <td><h4>Number of Guests / Room</h4></td>
+                <td>
+                    @(availableRoom.Adults > 0 ? (availableRoom.Adults > 1 ? availableRoom.Adults + " " + "Adults" : availableRoom.Adults + " " + "Adult") : "")
+                    @(availableRoom.Children > 0 ? (availableRoom.Children > 1 ? availableRoom.Children + " " + "Children" : availableRoom.Children + " " + "Child") : "")
+                    @(availableRoom.Infants > 0 ? (availableRoom.Infants > 1 ? availableRoom.Infants + " " + "Infants" : availableRoom.Infants + " " + "Infant") : "")
+                </td>
+            </tr>
+            <tr>
+                <td><h4>Board Basis</h4></td>
+                <td>@availableRoom.BoardCodeDescription</td>
+            </tr>
+            @if (!string.IsNullOrEmpty(availableRoom.ConfirmationNumber))
+            {
+                <tr>
+                    <td><h4>Room Confirmation Number</h4></td>
+                    <td><strong>@availableRoom.ConfirmationNumber</strong></td>
+                </tr>
+            }
+            <tr>
+                <td><h4>Cancellation Policy</h4></td>
+                <td>
+                    @if (availableRoom.CancelFreeBeforeDate > DateTime.MinValue && availableRoom.CancelFreeBeforeDate >= Model.Booking.BookingDate)
+                    {
+                        <em>
+                            No cancellation allowed after @availableRoom.CancelFreeBeforeDate?.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
+                            <p>* Cancellation is based on Hotel Cancellation Policy</p>
+                        </em>
+                    }
+                    else
+                    {
+                        <em>This booking is Non-Refundable and cannot be amended or modified. Failure to arrive at your hotel will be treated as a No-Show and no refund will be given (Hotel policy).</em>
+                    }
+                </td>
+            </tr>
+        </tbody>
+    </table>
+}
 <table class="guest-box mb-5">
     <thead>
         <tr>
-            <th>Guest Details</th>
+            <th>
+                <h3>Guest Details</h3>
+            </th>
         </tr>
     </thead>
     <tbody>
@@ -178,51 +281,104 @@ table th, table td {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td width="20%">1.</td>
-                            <td width="60%">Ms Vinh</td>
-                            <td>Adult</td>
-                        </tr>
-                        <tr>
-                            <td>2.</td>
-                            <td>Mr Lee</td>
-                            <td>Adult</td>
-                        </tr>
+                        @for (int i = 0; i < Model.Passengers.Count; i++)
+                        {
+                            <tr class="border-top">
+                                <td width="25%">@(i + 1).</td>
+                                <td width="50%">@Model.Passengers[i].Title @Model.Passengers[i].FirstName @Model.Passengers[i].LastName</td>
+                                <td>@Model.Passengers[i].PassengerType</td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </td>
         </tr>
     </tbody>
 </table>
-<table class="logo-brand pb-2 mb-3">
-    <thead>
-        <tr>
-            <th class="logo-brand__image"><img src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&amp;siteid=1257" alt="AirAsiaGo" /></th>
-            <th class="logo-brand__title">Billing Details</th>
-        </tr>
-    </thead>
-</table>
-<table class="guest-box mb-5">
-    <thead>
-        <tr>
-            <th>Booking summary</th>
-        </tr>
-    </thead>
-    <tbody class="bg-fade">
-        <tr>
-            <td width="50%"><strong>Hotel</strong></td>
-            <td><strong>MYR 219.75</strong></td>
-        </tr>
-        <tr>
-            <td><strong>Service Charge</strong></td>
-            <td><strong>MYR 20.00</strong></td>
-        </tr>
-        <tr>
-            <td class="text-main text-large"><strong>Total Paid</strong></td>
-            <td class="text-main text-large"><strong>MYR 239.75</strong></td>
-        </tr>
-    </tbody>
-</table>
+@if (!isUserB2B || (isUserB2B && isShowPriceInVoucher))
+{
+    <p class="page-break"></p>
+    <table class="logo-brand pb-2 mb-3">
+        <thead>
+            <tr>
+                <th class="logo-brand__image"><img src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&amp;siteid=1257" alt="AirAsiaGo" /></th>
+                <th class="logo-brand__title">Billing Details</th>
+            </tr>
+        </thead>
+    </table>
+    <table class="guest-box mb-5">
+        <thead>
+            <tr>
+                <th>
+	 	    <h3>Booking summary</h3>
+	 	 </th>
+            </tr>
+        </thead>
+        <tbody class="bg-fade">
+            @if (Model.BookingProductName != "")
+            {
+                <tr>
+                    <td width="50%"><strong>@Model.BookingProductName</strong></td>
+                    <td><strong>@Model.Currency @Model.PackagePrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong></td>
+                </tr>
+            }
+            @if (Model.Booking.OutboundFlight != null && Model.TaxesAndFees > 0)
+            {
+                <tr>
+                    <td><strong>Total Taxes</strong></td>
+                    <td><strong>@Model.Currency @Model.TaxesAndFees.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong></td>
+                </tr>
+            }
+            @if (Model.InsurancePrice > 0)
+            {
+                <tr>
+                    <td><strong>Insurance</strong></td>
+                    <td><strong>@Model.Currency @Model.InsurancePrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong></td>
+                </tr>
+            }
+            @if (Model.TourPrice > 0)
+            {
+                <tr>
+                    <td><strong>Tour</strong></td>
+                    <td><strong>@Model.Currency @Model.TourPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong></td>
+                </tr>
+            }
+            @if (Model.TransferPrice > 0)
+            {
+                <tr>
+                    <td><strong>Transfer</strong></td>
+                    <td><strong>@Model.Currency @Model.TransferPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong></td>
+                </tr>
+            }
+            @if (Model.PromoPrice > 0)
+            {
+                <tr>
+                    <td><strong>Your SAVINGS</strong></td>
+                    <td><strong>@Model.Currency @Model.PromoPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong></td>
+                </tr>
+            }
+            @if (Model.GstPrice > 0)
+            {
+                <tr>
+                    <td><strong>Total GST</strong></td>
+                    <td><strong>@Model.Currency @Model.GstPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong></td>
+                </tr>
+            }
+            @if (Model.OtherChargeMarkupPrice > 0)
+            {
+                <tr>
+                    <td><strong>Service Charge</strong></td>
+                    <td><strong>@Model.Currency @Model.OtherChargeMarkupPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong></td>
+                </tr>
+            }
+            <tr>
+                <td><h3 class="text-main">Total Paid</h3>
+                <td class="text-main text-large"><strong>@Model.Currency @Model.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong></td>
+            </tr>
+        </tbody>
+    </table>
+}
+<p class="page-break"></p>
 <table class="logo-brand pb-2 mb-3">
     <thead>
         <tr>
@@ -234,108 +390,208 @@ table th, table td {
 <table class="guest-box mb-1">
     <thead>
         <tr>
-            <th>Lead Passenger</th>
+            <th>
+                <h3>Lead Passenger</h3>
+            </th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td class="p-0" width="50%">
-                <table>
-                    <tbody>
-                        <tr>
-                            <td width="50%"><strong>Passenger Name</strong></td>
-                            <td class="text-main text-large"><strong>Ms Vinh</strong></td>
-                        </tr>
-                        <tr>
-                            <td width="50%"><strong>Contact</strong></td>
-                            <td>+84 1669090618</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <td>
+                <h4>Passenger Name : @Model.Booking.Passengers[0].Title @Model.Booking.Passengers[0].FirstName @Model.Booking.Passengers[0].LastName</h4>
             </td>
-            <td class="p-0">
-                <table>
-                    <tbody>
-                        <tr>
-                            <td width="50%"><strong>Date of Birth</strong></td>
-                            <td>20/03/2012</td>
-                        </tr>
-                        <tr>
-                            <td width="50%"><strong>Email Address</strong></td>
-                            <td>vinhlt.neu@gmail.com</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <td>
+                <h4>Date of Birth : @(Model.Booking.Passengers[0].DateOfBirth != DateTime.MinValue ? Model.Booking.Passengers[0].DateOfBirth.ToString("MM/dd/yyyy") : "")</h4>
             </td>
         </tr>
+        @if (Model.Booking.CustomerInfo != null)
+        {
+            <tr>
+                <td>
+                    <h4>Contact : @Model.Booking.CustomerInfo.ContactNumber @Model.Booking.CustomerInfo.MobileNumber</h4>
+                </td>
+                <td>
+                    <h4>Email Address : @Model.Booking.CustomerInfo.EmailAddress</h4>
+                </td>
+            </tr>
+        }
+        @if (!Model.IsProductOnly)
+        {
+            <tr>
+                <td>
+                    <h4>Passport Number : @Model.Booking.Passengers[0].PassportNo</h4>
+                </td>
+                <td>
+                    <h4>Passport Expire Date : @{var date1 = Model.Booking.Passengers[0].PassportExpiryDate != null ? Model.Booking.Passengers[0].PassportExpiryDate.ToString("MM/dd/yyyy") : "";}
+                    @date1</h4>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h4>Passport Country : @Model.Booking.Passengers[0].PassportIssueCountry</h4>
+                </td>
+                <td>
+                    <h4>Nationality : @Model.Booking.Passengers[0].PassportIssueCountry</h4>
+                </td>
+            </tr>
+        }
+        @if (Model.isFlight)
+        {
+            <tr>
+                <td>
+                    <h4>Passport Number : @Model.Booking.Passengers[0].PassportNo</h4>
+                </td>
+                <td>
+                    <h4>Passport Expire Date : @{var date = Model.Booking.Passengers[0].PassportExpiryDate != null ? Model.Booking.Passengers[0].PassportExpiryDate.ToString("MM/dd/yyyy") : "";}
+                    @date</h4>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h4>Passport Country : @Model.Booking.Passengers[0].PassportIssueCountry</h4>
+                </td>
+                <td>
+                    <h4>Nationality : @Model.Booking.Passengers[0].PassportIssueCountry</h4>
+                </td>
+            </tr>
+        }
+        @if (!Model.IsHotelOnly)
+        {
+            for (int i = 1; i < Model.Booking.Passengers.Count; i++)
+            {
+                <tr>
+                    <td>
+                        <h3>Passenger @i</h3>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <h4>Passenger Name : @Model.Booking.Passengers[i].Title @Model.Booking.Passengers[i].FirstName @Model.Booking.Passengers[i].LastName</h4>
+                    </td>
+                    <td>
+                        <h4>Date of Birth : @(Model.Booking.Passengers[i].DateOfBirth != DateTime.MinValue ? Model.Booking.Passengers[i].DateOfBirth.ToString("MM/dd/yyyy") : "")</h4>
+                    </td>
+                </tr>
+                if (!Model.IsProductOnly)
+                {
+                    <tr>
+                        <td>
+                            <h4>Passport Number : @Model.Booking.Passengers[i].PassportNo</h4>
+                        </td>
+                        <td>
+                            <h4>Passport Expire Date : @{var date2 = Model.Booking.Passengers[i].PassportExpiryDate != null ? Model.Booking.Passengers[i].PassportExpiryDate.ToString("MM/dd/yyyy") : "";}
+                            @date2</h4>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h4>Passport Country : @Model.Booking.Passengers[i].PassportIssueCountry</h4>
+                        </td>
+                        <td>
+                            <h4>Nationality : @Model.Booking.Passengers[i].PassportIssueCountry</h4>
+                        </td>
+                    </tr>
+                }
+            }
+        }
     </tbody>
 </table>
-<table class="mb-3">
-    <tbody>
-        <tr>
-            <td><strong>GoQuo acts as an agents for Agoda only</strong></td>
-        </tr>
-        <tr>
-            <td>For Emergencies regarding hotel bookings.</td>
-        </tr>
-        <tr>
-            <td class="text-large text-main">GoQuo Emergency Contact</td>
-        </tr>
-        <tr>
-            <td>
-                <ul class="pl-2">
-                    <li>Phone/Whatsapp : +60 12 222 6091 / +62-815 815 3857</li>
-                    <li>Skype : goquo.operation</li>
-                </ul>
-            </td>
-        </tr>
-    </tbody>
-</table>
-<table class="guest-box">
-    <tbody>
-        <tr>
-            <td>
-                <table>
-                    <tbody>
-                        <tr>
-                            <td width="15%">Invoice number:</td>
-                            <td>Invoice date: 09-Jul-2018</td>
-                        </tr>
-                        <tr>
-                            <td>Booking reference: EYH000110</td>
-                            <td>Guest email: <a href="">vinhlt.neu@gmail.com</a></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <table>
-                    <tbody>
-                        <tr>
-                            <td width="15%">Description of the goods/services</td>
-                            <td>Amount in MYR</td>
-                        </tr>
-                        <tr>
-                            <td>Hotel</td>
-                            <td>MYR 219.75</td>
-                        </tr>
-                        <tr>
-                            <td>Other taxes and fees </td>
-                            <td>MYR 0.00</td>
-                        </tr>
-                        <tr>
-                            <td>UAE VAT </td>
-                            <td>MYR 0.00</td>
-                        </tr>
-                        <tr>
-                            <td>Total amount </td>
-                            <td>MYR 239.75</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </td>
-        </tr>
-    </tbody>
-</table>
+@if (Model.Booking.Hotels != null)
+{
+    <table class="mb-3">
+        <tbody>
+            @if (!string.IsNullOrEmpty(supplierName) && supplierName.ToLower().Contains("airasiago"))
+            {
+                <tr>
+                    <td><strong>GoQuo acts as an agents for @supplierName only</strong></td>
+                </tr>
+            }
+            <tr>
+                <td>For Emergencies regarding hotel bookings.</td>
+            </tr>
+            <tr>
+                <td class="text-large text-main">GoQuo Emergency Contact</td>
+            </tr>
+            <tr>
+                <td>
+                    <ul class="pl-2">
+                        <li>Phone/Whatsapp : +60 12 222 6091 / +62-815 815 3857</li>
+                        <li>Skype : goquo.operation</li>
+                    </ul>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+}
+@if (Model.Booking.GstPrice > 0)
+{
+    <table class="guest-box">
+        <tbody>
+            <tr>
+                <td>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td width="40%">Invoice number: @Model.Booking.BookingConfirmRef</td>
+                                <td>Invoice date: @Model.Booking.BookingDate.ToString("dd MMM yyyy")</td>
+                            </tr>
+                            @if (Model.Booking.CustomerInfo != null)
+                            {
+                                <tr>
+                                    <td width="40%">
+                                            Name: @Model.Booking.CustomerInfo.Title @Model.Booking.CustomerInfo.FirstName @Model.Booking.CustomerInfo.LastName
+                                    </td>
+                                    <td>
+                                        Address: @Model.Booking.CustomerInfo.AddressLine1
+                                    </td>
+                                </tr>
+                            }
+                            <tr>
+                                <td width="40%">Booking Number: @Model.Booking.ReservationCode</td>
+                                <td>Guest email: @Model.Booking.CustomerInfo.EmailAddress</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td width="40%">Description of the goods/services</td>
+                                <td>@Model.Description</td>
+                            </tr>
+                            <tr>
+                                <td>Selling Currency</td>
+                                <td>@Model.Booking.Currency</td>
+                            </tr>
+                            <tr>
+                                <td>Exchange Rate</td>
+                                <td>@Model.Booking.RoundingAdjustment.ToString("N" + 4)</td>
+                            </tr>
+                            <tr>
+                                <td>Total @Model.Booking.Currency amount payable excluding GST</td>
+                                <td>
+                                    @Convert.ToDecimal(Model.TotalexcludeGST + Model.Booking.PromoPrice).ToString("N" + Model.Booking.CurrencyDecimals)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Discount </td>
+                                <td>@Model.Booking.PromoPrice.ToString("N" + Model.Booking.CurrencyDecimals)</td>
+                            </tr>
+                            <tr>
+                                <td>GST Tax @Model.Booking.Currency </td>
+                                <td>@Model.Booking.GstPrice.ToString("N" + Model.Booking.CurrencyDecimals)</td>
+                            </tr>
+                            <tr>
+                                <td>Total @Model.Booking.Currency amount payable inclusive GST </td>
+                                <td>@Model.Booking.TotalPrice.ToString("N" + Model.Booking.CurrencyDecimals)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+}

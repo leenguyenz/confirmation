@@ -1,0 +1,1005 @@
+@using System.Globalization
+@using GoQuoEngine.Data.Domain
+@using GoQuoEngine.Flights
+@using GoQuoEngine.Hotels
+@using MvcCornerstone.Extensions
+@using System.Linq
+@using Newtonsoft.Json
+@using GoQuoEngine.Transfers
+@{
+    Booking booking = Model.Booking;
+    List<BookingPassengerInfo> passengerInfos = booking.Passengers.ToList();
+    BookingCustomerInfo customerInfo = booking.CustomerInfo;
+    List<BookingHotelInfo> hotels = booking.Hotels.ToList();
+    BookingHotelInfo hotel = booking.Hotels.First();
+    var providerNames = hotel.HotelRooms.Select(h => h.ProviderName).Distinct();
+    string supplierName = String.Join(",", providerNames);
+
+    var baggagePrice = decimal.Zero;
+    var seatPrice = decimal.Zero;
+
+
+    if (booking.Seats != null && booking.Seats.Any())
+    {
+        seatPrice = booking.Seats.Sum(x => x.TotalPrice);
+    }
+
+    if (booking.Addons != null && booking.Addons.Any())
+    {
+        var baggages = booking.Addons.Where(x => x.AddonType == AddonType.Baggage).ToList();
+        if (baggages.Any())
+        {
+            baggagePrice = baggages.Sum(x => x.TotalPrice);
+        }
+    }
+
+    var isUserB2B = Model.IsB2B;
+
+    var isShowPriceInVoucher = booking.ShowPriceInVoucher;
+}
+
+<table border="0" cellpadding="10" cellspacing="0" style="font-family: arial, helvetica, sans-serif;" width="960">
+    <tbody>
+        <tr>
+            <td align="left" colspan="2" style="border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: #333333;"><strong><span>@Model.Booking.DepartureDate.ToString("dd MMM yyyy")</span>&nbsp;<img alt="lefticon" src="http://sg1.goquo.com/Customers/189/Images/left.jpg" style="display: inline;" />&nbsp;<span>@Model.Booking.ReturnDate.ToString("dd MMM yyyy")</span>&nbsp;<span style="font-size: 12px; color: #999999;">TRIP TO</span>&nbsp;</strong><span>@Model.Booking.To</span></td>
+        </tr>
+        <tr>
+            <td align="left">
+                <p style="margin: 5px 0px 10px;">Prepared For</p>
+                <!--START_FLIGHT_GUEST_ROW-->
+                @for (int i = 0; i < Model.Booking.Passengers.Count; i++)
+                {
+                    <p style="margin: 5px 0px 10px; line-height: 25px;"><strong> @Model.Booking.Passengers[i].Title @Model.Booking.Passengers[i].FirstName @Model.Booking.Passengers[i].LastName</strong></p>
+                }
+                <!--END_FLIGHT_GUEST_ROW-->
+            </td>
+            @if (!isUserB2B)
+            {
+                <td align="right" valign="middle"><img alt="logo" src="https://gqcdn.s3.amazonaws.com/hello/logo_malindo.png" style="display: block;" /></td>
+            }
+        </tr>
+        <tr>
+            <td style="border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: #333333; border-top-width: 2px; border-top-style: solid; border-top-color: #333333; background: none 0% 0% repeat scroll #f4f4f4;"><strong>RESERVATION CODE : <span style="color: #e52713;"><span>@Model.Booking.ReservationCode</span></span></strong></td>
+            <td style="border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: #333333; border-top-width: 2px; border-top-style: solid; border-top-color: #333333; background: none 0% 0% repeat scroll #f4f4f4; text-align: right;"><strong> HOLIDAY ID : </strong><span style="color:red;">@Model.Booking.BookingConfirmRef</span></td>
+        </tr>
+        <tr>
+            <td cellpadding="0" cellspacing="0" colspan="2" valign="middle">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tbody>
+                        <tr>
+                            <td style="width: 50px;"><img alt="" src="http://sg1.goquo.com/Customers/189/Images/flight.jpg" style="display: block;" /></td>
+                            <td>DEPARTURE: <span> <b>@Model.OutboundFlight.DepartureDate.ToString("dddd, dd MMM") </b></span>&nbsp;<span style="font-size: 12px; color: #666666;">Please verify flight times prior to departure</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="left" cellspacing="0" colspan="2" valign="top">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tbody>
+                        <tr valign="top">
+                            <td cellpadding="10" cellspacing="5" style="padding: 15px; width: 235px; background: none 0% 0% repeat scroll #dcdcdc;">
+                                <span>@Model.OutboundFlight.AirlineName</span><br />
+                                <span>@Model.OutboundFlight.AirlineCode</span><span>@Model.OutboundFlight.FlightNumber</span><br />
+                                <br />
+                                <span style="font-size: 15px;">Operated by: </span><br />
+                                <span>@Model.OutboundFlight.AirlineName</span><br />
+                                &nbsp;
+                            </td>
+                            <td rowspan="2" style="width: 6px;">&nbsp;</td>
+                            <td border="0" cellspacing="0" rowspan="2" style="border: 2px solid #bababa; width: 494px;">
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tbody>
+                                        <tr>
+                                            <td style="border-bottom-width: 2px; border-bottom-style: dotted; border-bottom-color: #bababa; padding: 15px; width: 48%;">
+                                                @foreach (var leg in Model.OutboundFlight.GetLegs())
+                                                {
+                                                    <span style="font-size: 22px;"><strong><span>@leg.DepartureAirportCode</span></strong></span><br />
+                                                    <span>@leg.DepartureCityName</span>
+                                                    <br />
+                                                }
+                                            </td>
+                                            <td align="center" style="border-bottom-width: 2px; border-bottom-style: dotted; border-bottom-color: #bababa; width: 3%;" valign="middle"><img alt="" src="http://sg1.goquo.com/Customers/189/Images/left.jpg" style="display: inline;" /></td>
+                                            <td style="border-bottom-width: 2px; border-bottom-style: dotted; border-bottom-color: #bababa; padding: 15px; width: 49%;">
+                                                @foreach (var leg in Model.OutboundFlight.GetLegs())
+                                                {
+                                                    <span style="font-size: 22px;"><strong><span>@leg.ArrivalAirportCode</span></strong></span><br />
+                                                    <span>@leg.ArrivalCityName</span>
+                                                    <br />
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 15px;" valign="top">
+                                                @foreach (var leg in Model.OutboundFlight.GetLegs())
+                                                {
+                                                    <p style="margin: 0px; line-height: 25px;">
+                                                        Departing At:<br />
+                                                        <span><b>@leg.DepartureDate.ToString("dd/MM HH:mm")</b></span><br />
+                                                        Terminal:<br />
+                                                        <span>Not Available</span>
+                                                    </p>
+                                                }
+                                            </td>
+                                            <td align="center" cellpadding="0" cellspacing="0" valign="middle">
+                                                <table border="0" cellpadding="0" cellspacing="0" height="147px" style="border: 1px dotted #bababa;" width="1px">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td style="height: 100%;">&nbsp;</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                            <td style="padding: 15px;" valign="top">
+                                                @foreach (var leg in Model.OutboundFlight.GetLegs())
+                                                {
+                                                    <p style="margin: 0px; line-height: 25px;">
+                                                        Arriving At:<br />
+                                                        <span><b>@leg.ArrivalDate.ToString("dd/MM HH:mm")</b></span><br />
+                                                        Terminal:<br />
+                                                        <span>Not Available</span>
+                                                    </p>
+                                                }
+
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                            <td border="0" cellpadding="10" cellspacing="10" rowspan="2" style="border-top-width: 2px; border-top-color: #bababa; border-right-width: 2px; border-right-color: #bababa; border-bottom-width: 2px; border-bottom-color: #bababa; border-style: solid solid solid none; padding: 15px 15px 0px; width: 245px;">
+                                <p style="margin: 0px; line-height: 22px;"><span>Stop(s): @Model.OutboundFlightStops</span></p>
+                            </td>
+                        </tr>
+                        <tr height="80%" valign="top">
+                            <td align="left" cellpadding="0" cellspacing="0" rowspan="7" style="background: none 0% 0% repeat scroll #dcdcdc;" valign="bottom"><img alt="" src="http://sg1.goquo.com/Customers/189/Images/under.png" style="display: block;" /></td>
+                        </tr>
+
+
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <table border="0" cellpadding="2" cellspacing="0" style="font-size: 14px;" width="100%">
+                    <tbody>
+                        <tr>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; padding: 5px 10px; background: none 0% 0% repeat scroll #dcdcdc;">Passenger Name:</th>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; background: none 0% 0% repeat scroll #dcdcdc;">Class:</th>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; background: none 0% 0% repeat scroll #dcdcdc;">Status:</th>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; background: none 0% 0% repeat scroll #dcdcdc;">Baggage Purchased:</th>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; background: none 0% 0% repeat scroll #dcdcdc;">Seats:</th>
+                            <th align="left" scope="col" style="background: none 0% 0% repeat scroll #dcdcdc;">Meals:</th>
+                        </tr>
+                        <!--START_DEP_PASSENGER_ROW-->
+                        @for (int i = 0; i < Model.Booking.Passengers.Count; i++)
+                        {
+                            var departureBaggage = new BookingFlightAddon();
+                            if (booking.Addons != null && booking.Addons.Any())
+                            {
+                                departureBaggage = booking.Addons.FirstOrDefault(x => x.AddonType == AddonType.Baggage && x.PaxNo == Model.Booking.Passengers[i].Order && x.From == Model.OutboundFlight.From);
+
+                            }
+
+                            var freeBaggage = Model.OutboundFlight.GetOriginData<FlightResponse>().OutboundAdultFreeBaggage;
+
+                            for (var j = 0; j < Model.OutboundFlight.GetLegs().Count; j++)
+                            {
+                                var leg = Model.OutboundFlight.GetLegs()[j];
+                                var seat = booking.Seats.FirstOrDefault(x => x.PaxNo == Model.Booking.Passengers[i].Order && x.From == leg.DepartureAirportCode);
+                                if (j == 0)
+                                {
+                                    <tr>
+                                        <td style="padding: 5px 10px; border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;" rowspan="@Model.OutboundFlight.GetLegs().Count">&raquo; @Model.Booking.Passengers[i].Title @Model.Booking.Passengers[i].FirstName @Model.Booking.Passengers[i].LastName</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@Model.OutboundCabinClass</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;"><span style="font-size: 14px; font-family: arial, helvetica, sans-serif;">Confirmed</span></td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@((departureBaggage != null && !string.IsNullOrEmpty(departureBaggage.Code)) ? string.Format("{0}", departureBaggage.GetOriginData<AddonInfo>().Weight + " KG") : "0 kg")  @freeBaggage ffff</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@(seat != null ? seat.SeatName : "Check-In Required")</td>
+                                        <td>Not Confirmed</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@Model.OutboundCabinClass</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;"><span style="font-size: 14px; font-family: arial, helvetica, sans-serif;">Confirmed</span></td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@((departureBaggage != null && !string.IsNullOrEmpty(departureBaggage.Code)) ? string.Format("{0}", departureBaggage.GetOriginData<AddonInfo>().Weight + " KG") : "0 kg") @freeBaggage 333333</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@(seat != null ? seat.SeatName : "Check-In Required")</td>
+                                        <td>Not Confirmed</td>
+                                    </tr>
+                                }
+
+                            }
+
+                        }
+                        <!--END_DEP_PASSENGER_ROW-->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <!--START_ARRIVAL_TABLE-->
+        @if (Model.Booking.InboundFlight != null)
+        {
+            <tr>
+                <td cellpadding="0" cellspacing="0" colspan="2" style="border-top-width: 2px; border-top-style: solid; border-top-color: #333333;" valign="middle">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tbody>
+                            <tr>
+                                <td style="width: 50px;"><img alt="" src="https://gqcdn.s3.amazonaws.com/GoQuoEngine/malindo/arrFlight.jpg" style="display: block;" /></td>
+                                <td>RETURN: <span><b>@Model.InboundFlight.DepartureDate.ToString("dddd, dd MMM")</b></span>&nbsp;<span style="font-size: 12px; color: #666666;">Please verify flight times prior to departure</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td align="left" cellspacing="0" colspan="2" valign="top">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tbody>
+                            <tr valign="top">
+                                <td cellpadding="10" cellspacing="5" style="padding: 15px; width: 235px; background: none 0% 0% repeat scroll #dcdcdc;">
+                                    <span>@Model.InboundFlight.AirlineName</span><br />
+                                    <span>@Model.InboundFlight.AirlineCode</span><span>@Model.InboundFlight.FlightNumber</span><br />
+                                    <br />
+                                    <span style="font-size: 15px;">Operated by: </span><br />
+                                    <span>@Model.InboundFlight.AirlineName</span><br />
+                                    &nbsp;
+                                </td>
+                                <td rowspan="2" style="width: 6px;">&nbsp;</td>
+                                <td border="0" cellspacing="0" rowspan="2" style="border: 2px solid #bababa; width: 494px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                        <tbody>
+                                            <tr>
+                                                <td style="border-bottom-width: 2px; border-bottom-style: dotted; border-bottom-color: #bababa; padding: 15px; width: 48%;">
+                                                    @foreach (var leg in Model.InboundFlight.GetLegs())
+                                                    {
+                                                        <span style="font-size: 22px;"><strong><span>@leg.DepartureAirportCode</span></strong></span><br />
+                                                        <span>@leg.DepartureCityName</span>
+                                                        <br />
+                                                    }
+                                                </td>
+                                                <td align="center" style="border-bottom-width: 2px; border-bottom-style: dotted; border-bottom-color: #bababa; width: 3%;" valign="middle"><img alt="" src="http://sg1.goquo.com/Customers/189/Images/left.jpg" style="display: inline;" /></td>
+                                                <td style="border-bottom-width: 2px; border-bottom-style: dotted; border-bottom-color: #bababa; padding: 15px; width: 49%;">
+                                                    @foreach (var leg in Model.InboundFlight.GetLegs())
+                                                    {
+                                                        <span style="font-size: 22px;"><strong><span>@leg.ArrivalAirportCode</span></strong></span><br />
+                                                        <span>@leg.ArrivalCityName</span>
+                                                        <br />
+                                                    }
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 15px;" valign="top">
+                                                    @foreach (var leg in Model.InboundFlight.GetLegs())
+                                                    {
+                                                        <p style="margin: 0px; line-height: 25px;">
+                                                            Departing At:<br />
+                                                            <span><b>@leg.DepartureDate.ToString("dd/MM HH:mm")</b></span><br />
+                                                            Terminal:<br />
+                                                            <span>Not Available</span>
+                                                        </p>
+                                                    }
+                                                </td>
+                                                <td align="center" cellpadding="0" cellspacing="0" valign="middle">
+                                                    <table border="0" cellpadding="0" cellspacing="0" height="147px" style="border: 1px dotted #bababa;" width="1px">
+                                                        <tbody>
+                                                            <tr>
+                                                                <td style="height: 100%;">&nbsp;</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                                <td style="padding: 15px;" valign="top">
+                                                    @foreach (var leg in Model.InboundFlight.GetLegs())
+                                                    {
+                                                        <p style="margin: 0px; line-height: 25px;">
+                                                            Arriving At:<br />
+                                                            <span><b>@leg.ArrivalDate.ToString("dd/MM HH:mm")</b></span><br />
+                                                            Terminal:<br />
+                                                            <span>Not Available</span>
+                                                        </p>
+                                                    }
+
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                                <td border="0" cellpadding="10" cellspacing="10" rowspan="2" style="border-top-width: 2px; border-top-color: #bababa; border-right-width: 2px; border-right-color: #bababa; border-bottom-width: 2px; border-bottom-color: #bababa; border-style: solid solid solid none; padding: 15px 15px 0px; width: 245px;">
+                                    <p style="margin: 0px; line-height: 22px;"><span>Stop(s): @Model.InboundFlightStops</span></p>
+                                </td>
+                            </tr>
+                            <tr height="80%" valign="top">
+                                <td align="left" cellpadding="0" cellspacing="0" rowspan="7" style="height: 37px; background: none 0% 0% repeat scroll #dcdcdc;" valign="bottom"><img alt="" src="http://sg1.goquo.com/Customers/189/Images/under.png" style="display: block;" /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        }
+        <tr>
+            <td colspan="2">
+                <table border="0" cellpadding="2" cellspacing="0" style="font-size: 14px; border-bottom-width: 1px; border-bottom-style: dotted; border-bottom-color: #bababa;" width="100%">
+                    <tbody>
+                        <tr>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; padding: 5px 10px; background: none 0% 0% repeat scroll #dcdcdc;">Passenger Name:</th>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; background: none 0% 0% repeat scroll #dcdcdc;">Class:</th>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; background: none 0% 0% repeat scroll #dcdcdc;">Status:</th>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; background: none 0% 0% repeat scroll #dcdcdc;">Baggage Purchased:</th>
+                            <th align="left" scope="col" style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa; background: none 0% 0% repeat scroll #dcdcdc;">Seats:</th>
+                            <th align="left" scope="col" style="background: none 0% 0% repeat scroll #dcdcdc;">Meals:</th>
+                        </tr>
+                        <!--START_ARR_PASSENGER_ROW-->
+                        @for (int i = 0; i < Model.Booking.Passengers.Count; i++)
+                        {
+                            var returnBaggage = new BookingFlightAddon();
+                            if (booking.Addons != null && booking.Addons.Any())
+                            {
+                                returnBaggage = booking.Addons.FirstOrDefault(x => x.AddonType == AddonType.Baggage && x.PaxNo == Model.Booking.Passengers[i].Order && x.From == Model.InboundFlight.From);
+                            }
+                            for (var j = 0; j < Model.InboundFlight.GetLegs().Count; j++)
+                            {
+                                var leg = Model.InboundFlight.GetLegs()[j];
+                                var seat = booking.Seats.FirstOrDefault(x => x.PaxNo == Model.Booking.Passengers[i].Order && x.From == leg.DepartureAirportCode);
+                                if (j == 0)
+                                {
+                                    <tr>
+                                        <td style="padding: 5px 10px; border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;" rowspan="@Model.OutboundFlight.GetLegs().Count">&raquo; @Model.Booking.Passengers[i].Title @Model.Booking.Passengers[i].FirstName @Model.Booking.Passengers[i].LastName</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@Model.InboundFlight.CabinClass</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;"><span style="font-size: 14px; font-family: arial, helvetica, sans-serif;">Confirmed</span></td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@((returnBaggage != null && !string.IsNullOrEmpty(returnBaggage.Code)) ? string.Format("{0} kg", returnBaggage.Code.Substring(1)) : "0 kg")</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@(seat != null ? seat.SeatName : "Check-In Required")</td>
+                                        <td>Not Confirmed</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@Model.InboundFlight.CabinClass</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;"><span style="font-size: 14px; font-family: arial, helvetica, sans-serif;">Confirmed</span></td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@((returnBaggage != null && !string.IsNullOrEmpty(returnBaggage.Code)) ? string.Format("{0} kg", returnBaggage.Code.Substring(1)) : "0 kg")</td>
+                                        <td style="border-right-width: 1px; border-right-style: dotted; border-right-color: #bababa;">@(seat != null ? seat.SeatName : "Check-In Required")</td>
+                                        <td>Not Confirmed</td>
+                                    </tr>
+                                }
+
+                            }
+
+                        }
+                        <!--END_ARR_PASSENGER_ROW-->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <!--END_ARRIVAL_TABLE-->
+    </tbody>
+</table>
+
+<!--<p style="page-break-after:always;"></p>-->
+@if (!isUserB2B || (isShowPriceInVoucher && isUserB2B))
+{
+    <div valign="middle" colspan="2" cellspacing="0" cellpadding="0" style="border-top-width: 5px; border-top-style: solid; border-top-color: #333333; background: none 0% 0% repeat scroll #dcdcdc;">
+        <table width="960" cellspacing="0" cellpadding="0" border="0" style="font-family: Arial, Helvetica, sans-serif;">
+            <tbody>
+                <tr>
+                    <td valign="middle" style="height: 50px;" colspan="4">
+                        <h3 style="margin: 0px; padding: 0px; color: #e81d0a;">Booking Summary</h3>
+                    </td>
+                </tr>
+                @if (Model.BookingProductName != "")
+                {
+                    <tr>
+                        <td style="border: 1px solid #cccccc; height: 40px;" colspan="2">
+                            <strong>&nbsp; @Model.BookingProductName</strong>
+                        </td>
+                        <td style="border-top-width: 1px; border-top-color: #cccccc; border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: solid solid solid none; height: 40px;" colspan="2">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @Model.PackagePrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>}
+                @if (baggagePrice > 0)
+                {
+                    <tr>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;" colspan="2">
+                            <strong>&nbsp; Baggages</strong>
+                        </td>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;" colspan="2">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @baggagePrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>}
+                @if (seatPrice > 0)
+                {
+                    <tr>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;" colspan="2">
+                            <strong>&nbsp; Seats</strong>
+                        </td>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;" colspan="2">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @seatPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>}
+                @if (Model.Booking.OutboundFlight != null && Model.TaxesAndFees > 0)
+                {
+                    <tr>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;" colspan="2">
+                            <strong>&nbsp; Taxes & Fees</strong>
+                        </td>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;" colspan="2">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @Model.TaxesAndFees.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>}
+                @if (Model.InsurancePrice > 0)
+                {
+                    <tr>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;" colspan="2">
+                            <strong>&nbsp; Insurance</strong>
+                        </td>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;" colspan="2">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @Model.InsurancePrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>
+                }
+                @if (Model.TourPrice > 0)
+                {
+                    <tr>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;" colspan="2">
+                            <strong>&nbsp; Tour</strong>
+                        </td>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;" colspan="2">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @Model.TourPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>
+                }
+                @if (Model.TransferPrice > 0)
+                {
+                    <tr>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;" colspan="2">
+                            <strong>&nbsp; Transfer</strong>
+                        </td>
+                        <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;" colspan="2">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @Model.TransferPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>
+                }
+                <!--START_GST_TAX_ROW -->
+                @if (Model.PromoPrice > 0)
+                {
+                    <tr>
+                        <td colspan="2" style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;">
+                            <strong>&nbsp; Your SAVINGS</strong>
+                        </td>
+                        <td colspan="2" style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @Model.PromoPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>
+                }
+                @if (Model.GstPrice > 0)
+                {
+                    <tr>
+                        <td colspan="2" style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;">
+                            <strong>&nbsp; Total GST</strong>
+                        </td>
+                        <td colspan="2" style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @Model.GstPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>
+                }
+                @if (Model.OtherChargeMarkupPrice > 0)
+                {
+                    <tr>
+                        <td colspan="2" style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;">
+                            <strong>&nbsp; Service Charge</strong>
+                        </td>
+                        <td colspan="2" style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;">
+                            &nbsp; <strong style="color: #545454;">@Model.Currency @Model.OtherChargeMarkupPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</strong>
+                        </td>
+                    </tr>
+                }
+                <!--END_GST_TAX_ROW -->
+                <tr>
+                    <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none solid solid; height: 40px;" colspan="2">
+                        <h3 style="margin: 0px; padding: 0px; color: #e81d0a;">
+                            &nbsp; Total Paid
+                        </h3>
+                    </td>
+                    <td style="border-right-width: 1px; border-right-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-style: none solid solid none; height: 40px;" colspan="2">
+                        <h3 style="margin: 0px; padding: 0px; color: #e81d0a;">
+                            &nbsp; @Model.Currency @Model.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)
+                        </h3>
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (Model.HasFlight)
+{
+    <p style="page-break-after:always;"></p>
+    <table width="960" cellspacing="0" cellpadding="0" style="font-family: arial, helvetica, sans-serif; margin: 0px; padding: 0px;">
+        <tbody>
+            <!--START_PACKAGE_CANCELLATION_ROW -->
+            <tr>
+                <td style="color: #e81d0a; height: 50px;" colspan="3">
+                    <h3 style="margin: 0px; padding: 0px;">
+                        Important Notes
+                    </h3>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <ul style="list-style: none outside none; margin: 0px; font-size: 14px; line-height: 25px; padding-left: 10px;">
+                        <li>
+                            <strong>*&nbsp;</strong> Please arrive at the airport 90 minutes before the flight
+                            for domestic travel and 2 hours for international travel.
+                        </li>
+                        <li><strong>*&nbsp;</strong> Check-in closes 45 minutes before departure time.</li>
+                        <li><strong>*&nbsp;</strong> Please be at the gate 30 minutes before departure time.</li>
+                        <li>
+                            <strong>*&nbsp;</strong> If paid by credit card please note that the credit card
+                            used must be presented by the card holder for verification at check-in or you may
+                            be denied boarding.
+                        </li>
+                        <li>
+                            <strong>*&nbsp;</strong> Economy Class Passengers are allowed to bring up to 7KG
+                            of hand luggage on board Malindo Air Flights. Please refer to our terms and condition
+                            for more information.
+                        </li>
+                        <li>
+                            <strong>NOTE: For full terms and conditions please go to http://www.malindoholidays.com/terms-conditions</strong>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <p style="font-size: 14px; margin: 0px; line-height: 20px; padding: 10px 0px; color: #e81d0a;">
+                        Please note that the booking number is uniquely generated by Malindo Holidays. It
+                        is only valid for this particular booking based on the details stated in the voucher.
+                        In any instance of changes related to your booking such as flight schedule we will
+                        contact you via the same e-mail provided in this booking.
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td style="height: 40px;" colspan="3">
+                    <strong style="color: #e81d0a;">REMARKS</strong>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <p style="font-size: 14px; margin: 0px; padding: 0px; line-height: 20px;">
+                        Peak surcharges may apply.
+                        <br />
+                        <br />
+                        Malindo Holidays reserves the right to charge the full amount in the event of any
+                        amendments and/or cancellation that involves peak periods.
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <ul style="list-style: none outside none; margin: 0px; font-size: 14px; line-height: 25px; padding: 10px;">
+                        <li>
+                            1. Ground package price consists of land cost only, namely hotel, transfer and tour;
+                            and does not include flight.
+                        </li>
+                        <li>
+                            2. In the event of any cancellation that involves flight, the relevant fare rules
+                            and cancellation charges as per airline policy will apply.
+                        </li>
+                        <li>
+                            3. For any sightseeing tour booked, please note that the tour's pick-up location
+                            and timing is subject to change with final confirmation issued by the tour operator.
+                        </li>
+                        <li>
+                            4. Malindo Holidays reserves the right to amend/modify/cancel the package in the
+                            event the original booking is unable to be fulfilled.
+                        </li>
+                        <li>
+                            5. Above terms and conditions is valid until December 2017. Other terms and conditions
+                            apply.
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td style="height: 30px;" colspan="3">
+                    <strong style="color: #e81d0a;">
+                        For any assistance you may contact us on the following
+                    </strong><strong style="color: #565656;">Malindo Holidays Call Center Numbers</strong>
+                </td>
+            </tr>
+            <tr>
+                <td style="height: 45px;" colspan="3">
+                    <strong style="color: #565656;">Reservation: </strong>
+                </td>
+            </tr>
+            <tr>
+                <td style="height: 30px;" colspan="3">
+                    <p style="padding: 0px 10px; margin: 0px; line-height: 20px; font-size: 14px;">
+                        +603 - 7841 5388 (Kuala Lumpur)<br />
+                        18605008866 (India)
+                    </p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+}
+<p style="page-break-after:always;"></p>
+<table cellpadding="0" cellspacing="0" style="font-family: arial, helvetica, sans-serif;font-size:16px; margin: 0px; padding: 0px;" width="960">
+    <tbody>
+        <tr>
+            @if (!isUserB2B)
+            {
+                <td colspan="2"><span style="font-size: 16px; margin-bottom: 30px;"><img src="https://gqcdn.s3.amazonaws.com/hello/logo_malindo.png" alt="" width="250"> </td>
+                <td colspan="2" style="text-align: right;">
+                    <h2 style="margin: 0px; padding-bottom: - 20px; color: #ce030d;"> Hotel Information &nbsp;&nbsp; </h2>
+                </td>
+            }
+            else
+            {
+                <td colspan="4" style="text-align: right;">
+                    <h2 style="margin: 0px; padding-bottom: - 20px; color: #ce030d;"> Hotel Information &nbsp;&nbsp; </h2>
+                </td>
+            }
+        </tr>
+        <tr>
+            <td colspan="4" style="height: 50px;border-top-width: 4px; border-top-style: solid; border-top-color: #ce030d;">
+                <h2 style="margin: 0px; padding: 0px; color: #545454;">Hotel Voucher</h2>
+            </td>
+        </tr>
+        <tr>
+            <td valign="middle" colspan="4" style="height: 50px;">
+                <h3 style="margin: 0px; padding: 0px; color: #e81d0a;">
+                    Hotel Details
+                </h3>
+            </td>
+        </tr>
+        <tr>
+            <td style="border-top-width: 1px; border-top-style: solid; border-top-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; width: 20%; height: 35px; padding-left: 10px;">
+                <h4 style="margin: 0px;">@supplierName Booking ID</h4>
+            </td>
+            <td colspan="3" style=" border-top-width: 1px; border-top-style: solid; border-top-color: #cccccc; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                <h3 style="margin: 0px; padding: 0px; color: #e81d0a;">@Model.Booking.Hotels[0].ProviderBookingReference</h3>
+            </td>
+        </tr>
+        <tr>
+            <td style="border-top-width: 1px; border-top-style: solid; border-top-color: #cccccc; border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: solid none solid solid;height: 35px; padding-left: 10px;">
+                <h4 style="margin: 0px; padding: 0px;">Malindo Booking No.</h4>
+            </td>
+            <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; padding: 10px;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                <h3 style="margin: 0px; padding: 0px; color: #e81d0a;">@booking.BookingConfirmRef</h3>
+            </td>
+        </tr>
+
+        @if (!string.IsNullOrEmpty(supplierName) && supplierName.ToLower().Contains("agoda"))
+        {
+            <tr>
+                <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; padding-left: 10px;">
+
+                    <h4 style="margin: 0px; padding: 0px;">Important Note</h4>
+                </td>
+                <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; padding: 10px;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc;">
+                    <strong>This booking is Pre-paid.</strong>
+                    <br />
+                    <span>Please present this prepaid voucher and refer to Agoda booking ID upon check in. This booking is booked and payable by Agoda.com</span>
+                    <br />
+                    <span>GoQuo acts an agent for Agoda</span>
+                </td>
+
+            </tr>
+        }
+        <tr>
+            <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; padding-left: 10px;">
+                <h4 style="margin: 0px; padding: 0px;">Hotel Name</h4>
+            </td>
+            <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                <strong>@hotel.Name</strong>
+            </td>
+        </tr>
+        <tr>
+            <td style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; padding: 10px;">
+                <h4 style="margin: 0px; padding: 0px;">Hotel Address </h4>
+            </td>
+            <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; ;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                @Model.Booking.Hotels[0].Address
+            </td>
+        </tr>
+        <tr>
+            <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; padding-left: 10px;">
+                <h4 style="margin: 0px; padding: 0px;">Hotel Contact Number</h4>
+            </td>
+            <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; padding: 10px;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc;">
+                @Model.Booking.Hotels[0].Telephone
+            </td>
+        </tr>
+        <tr>
+            <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; padding-left: 10px;">
+                <h4 style="margin: 0px; padding: 0px;">Supplier Name </h4>
+            </td>
+            <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; padding: 10px;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc;">
+                @supplierName
+            </td>
+        </tr>
+        <tr>
+            <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; width: 20%; padding-left: 10px;">
+                <h4 style="margin: 0px; padding: 0px;">Check in date</h4>
+            </td>
+            <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; padding: 10px;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                @((Model.Booking.CheckIn != null && Model.Booking.CheckIn != DateTime.MinValue) ? Model.Booking.CheckIn?.ToString("dd/MM/yyyy") : Model.Booking.DepartureDate.ToString("dd/MM/yyyy"))
+            </td>
+        </tr>
+        <tr>
+            <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; padding: 10px;">
+                <h4 style="margin: 0px; padding: 0px;">Check out date</h4>
+            </td>
+            <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                @((Model.Booking.CheckOut != null && Model.Booking.CheckOut != DateTime.MinValue) ? Model.Booking.CheckOut?.ToString("dd/MM/yyyy") : Model.Booking.ReturnDate.ToString("dd/MM/yyyy"))
+            </td>
+        </tr>
+        <tr>
+            <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; padding: 10px;">
+                <h4 style="margin: 0px; padding: 0px;">Number of Nights</h4>
+            </td>
+            <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                @if (Model.Booking.CheckIn != null && Model.Booking.CheckIn != DateTime.MinValue)
+                {
+                    <span>@((Model.Booking.CheckOut - Model.Booking.CheckIn).TotalDays)</span>
+                }
+                else
+                {
+                    <span>@(Model.Booking.ReturnDate - Model.Booking.DepartureDate).TotalDays)</span>
+                }
+            </td>
+        </tr>
+        @if (!string.IsNullOrEmpty(hotel.CheckInInstructions))
+        {
+            <tr>
+                <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; padding: 10px;">
+                    <h4 style="margin: 0px; padding: 0px;">Check-in Instruction</h4>
+                </td>
+                <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                    @Raw(hotel.CheckInInstructions)
+                </td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(hotel.SpecialCheckInInstructions))
+        {
+            <tr>
+                <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; padding: 10px;">
+                    <h4 style="margin: 0px; padding: 0px;">Special Check-in Structions</h4>
+                </td>
+                <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                    @Raw(hotel.SpecialCheckInInstructions)
+                </td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(supplierName) && supplierName.ToLower().Contains("agoda") && !string.IsNullOrEmpty(hotel.Remarks))
+        {
+            <tr>
+                <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; width: 20%; padding-left: 10px;">
+                    <h4 style="margin: 0px; padding: 0px;">Hotel Remark</h4>
+                </td>
+                <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                    @Raw(hotel.Remarks)
+                </td>
+            </tr>
+        }
+
+        @for (byte i = 0; i < hotel.HotelRooms.Count; i++)
+        {
+            var availableRoom = hotel.HotelRooms.ElementAt(i);
+            <tr>
+                <td colspan="4" style="height: 20px;" valign="middle"></td>
+            </tr>
+            <!--START_ROOM_TYPE_ROW-->
+            <tr>
+                <td style="border: 1px solid #cccccc; height: 35px;" colspan="4">
+                    <h3 style="margin: 0px; padding: 0px; color: #e81d0a;">
+                        Room details @(i + 1)
+                    </h3>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4">
+                    <table cellspacing="0" cellpadding="0" width="100%">
+                        <tbody>
+                            <tr>
+                                <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; width: 25%; padding-left: 10px;">
+                                    <h4 style="margin: 0px; padding: 0px;">Room Type</h4>
+                                </td>
+                                <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                                    @availableRoom.Description
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; padding-left: 10px;">
+                                    <h4 style="margin: 0px; padding: 0px;">Number of Guest / Room</h4>
+                                </td>
+                                <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                                    @availableRoom.Adults Adult
+                                    @{var childtext = availableRoom.Children > 0 ? availableRoom.Children + "Children" : "";}
+                                    @childtext
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; padding-left: 10px;">
+                                    <h4 style="margin: 0px; padding: 0px;">Board Basis</h4>
+                                </td>
+                                <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                                    @availableRoom.BoardCodeDescription
+                                </td>
+                            </tr>
+                            @if (!string.IsNullOrEmpty(availableRoom.ConfirmationNumber))
+                            {
+                                <tr>
+                                    <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; padding-left: 10px;">
+                                        <h4 style="margin: 0px; padding: 0px;">Room Confirmation Number</h4>
+                                    </td>
+                                    <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid; border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding-left: 10px;">
+                                        @availableRoom.ConfirmationNumber
+                                    </td>
+                                </tr>
+                            }
+                            <tr>
+                                <td style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #cccccc; border-left-width: 1px; border-left-style: solid; border-left-color: #cccccc; height: 35px; padding: 10px;">
+                                    <h4 style="margin: 0px; padding: 0px;">Cancellation Policy</h4>
+                                </td>
+                                <td colspan="3" style="border-bottom-width: 1px; border-bottom-color: #cccccc; border-left-width: 1px; border-left-color: #cccccc; border-style: none none solid solid;border-right-width: 1px; border-right-style: solid; border-right-color: #cccccc; padding: 10px;">
+                                    @if (availableRoom.CancelFreeBeforeDate > DateTime.MinValue)
+                                    {
+                                        <em>
+                                            No cancellation allowed after @availableRoom.CancelFreeBeforeDate?.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
+                                            <span style="display: block;">* Cancellation is based on Hotel Cancellation Policy</span>
+                                        </em>
+                                    }
+                                    else
+                                    {
+                                        <em>This booking is Non-Refundable and cannot be amended or modified. Failure to arrive at your hotel will be treated as a No-Show and no refund will be given (Hotel policy).</em>
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4" style="height: 20px;" valign="middle"></td>
+            </tr>
+            <!--END_ROOM_TYPE_ROW-->
+                                        }
+    </tbody>
+</table>
+<p style="page-break-after:always;"></p>
+<table cellpadding="0" cellspacing="0" style="font-family: arial, helvetica, sans-serif;font-size:16px; margin: 0px; padding: 0px;" width="960">
+    <tbody>
+        @if (!isUserB2B)
+        {
+            <tr>
+                <td colspan="2"><span style="font-size: 16px; margin-bottom: 30px;"><img src="https://gqcdn.s3.amazonaws.com/hello/logo_malindo.png" alt="" width="250"> </td>
+            </tr>
+            <tr>
+                <td colspan="4" style="height: 50px; border-top-width: 4px; border-top-style: solid; border-top-color: #ce030d;">
+                    <h3 style="margin: 0px; padding: 0px; color: #e81d0a;">Guest Details</h3>
+                </td>
+            </tr>
+        }
+        <tr>
+            <td colspan="4">
+                <table cellpadding="7" cellspacing="0" style="border: 1px solid #cccccc; font-size: 16px; font-family: arial, helvetica, sans-serif; font-size: 16px;" width="100%">
+                    <tbody>
+                        <tr>
+                            <td style="background-color: #f0f0f0; border-top: 1px solid #cccccc; border-bottom: 1px solid #cccccc; width: 8%; height: 35px;"><strong># </strong></td>
+                            <td style="background-color: #f0f0f0; border-top: 1px solid #cccccc; border-bottom: 1px solid #cccccc; width: 43%; height: 35px;"><strong>Names</strong></td>
+                            <!-- <td width="33%" height="35" style="border-bottom: #cccccc solid 1px">
+                                <strong>Ages</strong>
+                            </td>-->
+                            <td style="background-color: #f0f0f0; border-top: 1px solid #cccccc; border-bottom: 1px solid #cccccc; width: 16%; height: 35px;"><strong>Guest Type</strong></td>
+                        </tr>
+                        <!--START_HOTEL_GUEST_ROW -->
+                        @for (int i = 0; i < Model.Passengers.Count; i++)
+                        {
+                            <tr>
+                                <td><span style="font-size: 16px;">@(i + 1).</span></td>
+                                <td><span style="font-size: 16px;">@Model.Passengers[i].Title @Model.Passengers[i].FirstName @Model.Passengers[i].LastName</span></td>
+                                <td><span style="font-size: 16px;">@Model.Passengers[i].PassengerType</span></td>
+                            </tr>
+                        }
+
+                        <!--END_HOTEL_GUEST_ROW -->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+
+    </tbody>
+</table>
+@if (Model.Booking.OutboundFlight != null && Model.Booking.Hotels != null)
+{
+    <table width="100%" cellspacing="0" cellpadding="0" style="font-family: arial, helvetica, sans-serif; margin: 0px; padding: 0px;">
+        <tr>
+            <td style="height: 50px;" colspan="4">
+                <p style="font-size: 14px; line-height: 25px; margin: 0px; padding: 20px 0px 0px;">
+                    <strong>GoQuo acts as an agents for  @supplierName only</strong>
+                </p>
+            </td>
+        </tr>
+        <!--END_BOOKEDANDPAIDBY-->
+        <!--START_SUPP_EMERGENCYCONTACTHEADER-->
+        <tr>
+            <td style="height: 50px;" colspan="4">
+                <p style="font-size: 14px; line-height: 25px; margin: 0px; padding: 20px 0px 0px;">
+                    For Emergencies regarding hotel bookings.
+                </p>
+            </td>
+        </tr>
+        <!--END_SUPP_EMERGENCYCONTACTHEADER-->
+        <!--GQCONTACT_START-->
+        <tr>
+            <td valign="middle" colspan="4" style="height: 40px;">
+                <h4 style="margin: 0px; padding: 0px; color: #e81d0a;">
+                    GoQuo Emergency Contact
+                </h4>
+            </td>
+        </tr>
+        <tr>
+            <td style="height: 30px;" colspan="4">
+                <p style="padding: 0px 10px; margin: 0px; line-height: 20px; font-size: 14px;">Phone/Whatsapp : +60 12 222 6091 / +62-815 815 3857</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="height: 30px;" colspan="4">
+                <p style="padding: 0px 10px; margin: 0px; line-height: 20px; font-size: 14px;">Skype : goquo.operation</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="height: 50px;" colspan="4">
+                <p style="font-size: 14px; line-height: 25px; margin: 0px; padding: 20px 0px 0px;">
+                    <strong>NOTE: For full terms and conditions please go to http://www.malindoholidays.com/terms-conditions</strong>
+                </p>
+            </td>
+        </tr>
+    </table>
+}
+<br />
+@if (!Model.HasFlight && Model.Booking.Hotels != null)
+{
+    <table width="100%" cellspacing="0" cellpadding="0" style="font-family: arial, helvetica, sans-serif; margin: 0px; padding: 0px;">
+        <tr>
+            <td style="height: 50px;" colspan="4">
+                <p style="font-size: 14px; line-height: 25px; margin: 0px; padding: 20px 0px 0px;">
+                    <strong>GoQuo acts as an agents for  @supplierName only</strong>
+                </p>
+            </td>
+        </tr>
+        <!--END_BOOKEDANDPAIDBY-->
+        <!--START_SUPP_EMERGENCYCONTACTHEADER-->
+        <tr>
+            <td style="height: 50px;" colspan="4">
+                <p style="font-size: 14px; line-height: 25px; margin: 0px; padding: 20px 0px 0px;">
+                    For Emergencies regarding hotel bookings.
+                </p>
+            </td>
+        </tr>
+        <!--END_SUPP_EMERGENCYCONTACTHEADER-->
+        <!--GQCONTACT_START-->
+        <tr>
+            <td valign="middle" colspan="4" style="height: 40px;">
+                <h4 style="margin: 0px; padding: 0px; color: #e81d0a;">
+                    GoQuo Emergency Contact
+                </h4>
+            </td>
+        </tr>
+        <tr>
+            <td style="height: 30px;" colspan="4">
+                <p style="padding: 0px 10px; margin: 0px; line-height: 20px; font-size: 14px;">Phone/Whatsapp :  +60 12 222 6091 / +62-815 815 3857</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="height: 30px;" colspan="4">
+                <p style="padding: 0px 10px; margin: 0px; line-height: 20px; font-size: 14px;">Skype : goquo.operation</p>
+            </td>
+        </tr>
+    </table>
+}
