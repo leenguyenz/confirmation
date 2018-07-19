@@ -1,0 +1,1823 @@
+@using System.Globalization
+@using GoQuoEngine.Data.Domain
+@using GoQuoEngine.Flights
+@using GoQuoEngine.Hotels
+@using MvcCornerstone.Extensions
+@using System.Linq
+@using GoQuoEngine.Core.Extensions
+@using Newtonsoft.Json
+@using GoQuoEngine.Transfers
+
+
+@{
+    Booking booking = Model.Booking;
+    var taxInvoice = Model.TaxInvoice;
+
+    var flightPriceAndTax = booking.OutboundFlight.Price + booking.OutboundFlight.MarkupPrice + booking.OutboundFlight.TaxPrice;
+    var taxFlightHotel = flightPriceAndTax + Convert.ToDecimal(taxInvoice.Hotel);
+
+    List<BookingPassengerInfo>
+    passengerInfos = booking.Passengers.ToList();
+    BookingCustomerInfo customerInfo = booking.CustomerInfo;
+
+    List<BookingHotelInfo> hotels = booking.Hotels.ToList();
+    BookingHotelInfo hotel = booking.Hotels.First();
+
+    var providerNames = hotel.HotelRooms.Select(h => h.ProviderName).Distinct();
+    string supplierName = String.Join(",", providerNames);
+    string hotelConfirmNumber = hotel.HotelRooms.First().ConfirmationNumber;
+    //HotelAvailable hotelAvailable = hotel.GetHotelAvailable();
+    //AvailableRoom availableRoom = hotelAvailable.AvailableRooms.First();
+    //AvailableRoomType availableRoomType = availableRoom.AvailableRoomTypes.First();
+
+    List<BookingTourInfo> tours = booking.Tours.ToList();
+    var outboundFlight = Model.Booking.OutboundFlight;
+    var inboundFlight = Model.Booking.InboundFlight;
+
+    BookingTransferInfo arrivalTransfer = booking.ArrivalTransfer;
+    //   TransferResponse arrivalTransferResponse = Model.ArrivalTransfer;
+    BookingTransferInfo departureTransfer = booking.DepartureTransfer;
+    //  TransferResponse departureTransferResponse = Model.DepartureTransfer;
+
+    var paymentCurrency = Model.Booking.Currency;
+    var paymentAmount = decimal.Zero;
+    if (!string.IsNullOrEmpty(Model.Booking.PaymentRequest))
+    {
+        var paymentRequest = JsonConvert.DeserializeObject<Dictionary<string, string>>(Model.Booking.PaymentRequest);
+        if (paymentRequest.ContainsKey("PurAmount"))
+        {
+            var amount = paymentRequest["PurAmount"];
+            if (!string.IsNullOrEmpty(amount))
+            {
+                decimal.TryParse(amount, out paymentAmount);
+            }
+        }
+        if (paymentRequest.ContainsKey("Currency"))
+        {
+            paymentCurrency = paymentRequest["Currency"];
+        }
+    }
+
+    var baggagePrice = decimal.Zero;
+    var mealPrice = decimal.Zero;
+    var seatPrice = decimal.Zero;
+
+    if (booking.Seats != null && booking.Seats.Any())
+    {
+        seatPrice = booking.Seats.Sum(x => x.TotalPrice);
+    }
+
+    if (booking.Addons != null && booking.Addons.Any())
+    {
+        var baggages = booking.Addons.Where(x => x.AddonType == AddonType.Baggage).ToList();
+        if (baggages.Any())
+        {
+            baggagePrice = baggages.Sum(x => x.TotalPrice);
+        }
+
+        var meals = booking.Addons.Where(x => x.AddonType == AddonType.Meal).ToList();
+        if (meals.Any())
+        {
+            mealPrice = meals.Sum(x => x.TotalPrice);
+        }
+    }
+
+    var packagePriceIncludeTax = Model.PackagePrice + booking.TaxesAndFees;
+    var currencyRate = booking.OutboundFlight.CurrencyRate;
+    var flightTaxAndFee = 120 * booking.OutboundFlight.CurrencyRate;
+    var totalPrice = Model.TotalPrice - Model.Summary.TourPrice - Model.Summary.TransferPrice;
+    var totalPricePerPerson = totalPrice / passengerInfos.Count();
+    var totayNights = (Model.Booking.CheckOut - Model.Booking.CheckIn).TotalDays;
+
+    var cancellationsArrival = new List<CancellationPolicy>();
+    var cancellationsDeparture = new List<CancellationPolicy>();
+
+    BookingTransferInfo arrTransfer = Model.Booking.ArrivalTransfer;
+    BookingTransferInfo depTransfer = Model.Booking.ArrivalTransfer;
+
+
+
+
+
+    //if (arrivalTransferResponse != null)
+    //{
+    //    cancellationsArrival = arrivalTransferResponse.GetCancellationPolicy();
+    //}
+    //if (departureTransferResponse != null)
+    //{
+    //    cancellationsDeparture = departureTransferResponse.GetCancellationPolicy();
+    //}
+
+    decimal tourPrice = 0;
+    if (booking.Tours != null && booking.Tours.Any())
+    {
+        tourPrice = booking.Tours.Sum(x => x.TotalPrice);
+    }
+
+    decimal transferPrice = 0;
+
+    if (Model.Booking.ArrivalTransfer != null || Model.Booking.DepartureTransfer != null)
+    {
+        if (booking.ArrivalTransfer != null)
+        {
+            transferPrice += booking.ArrivalTransfer.TotalPrice;
+        }
+        if (Model.Booking.DepartureTransfer != null)
+        {
+            transferPrice += booking.DepartureTransfer.TotalPrice;
+        }
+    }
+
+    var outboundFlightLegs = Model.OutboundFlight.GetLegs();
+    var inboundFlightLegs = Model.InboundFlight.GetLegs();
+
+    List<GoQuoEngine.GoQuoTransferService.ClassApi.VoucherInfo> arrTransferVoucherInfos = new List<GoQuoEngine.GoQuoTransferService.ClassApi.VoucherInfo>();
+    List<GoQuoEngine.GoQuoTransferService.ClassApi.VoucherInfo> departureTransferVoucherInfos = new List<GoQuoEngine.GoQuoTransferService.ClassApi.VoucherInfo>();
+    if (arrTransfer != null && !string.IsNullOrEmpty(arrTransfer.VoucherInfo))
+    {
+        arrTransferVoucherInfos = arrTransfer.VoucherInfo.JsonDeserialize<List<GoQuoEngine.GoQuoTransferService.ClassApi.VoucherInfo>>();
+        arrTransferVoucherInfos = arrTransferVoucherInfos.Where(x => x.Category.Trim().Equals("Instructions") || x.Category.Trim().Equals("Contact details")).ToList();
+        if (arrTransferVoucherInfos.Any())
+        {
+            foreach (var item in arrTransferVoucherInfos)
+            {
+                item.Category = item.Category.Trim();
+                item.Name = item.Name.Trim().ToLower();
+                item.Content = item.Content.Trim().Replace("\\n", "").Replace("\\r", "");
+            }
+        }
+    }
+
+    if (departureTransfer != null && !string.IsNullOrEmpty(departureTransfer.VoucherInfo))
+    {
+
+        departureTransferVoucherInfos = departureTransfer.VoucherInfo.JsonDeserialize<List<GoQuoEngine.GoQuoTransferService.ClassApi.VoucherInfo>>();
+        departureTransferVoucherInfos = departureTransferVoucherInfos.Where(x => x.Category.Trim().Equals("Instructions") || x.Category.Trim().Equals("Contact details")).ToList();
+        if (departureTransferVoucherInfos.Any())
+        {
+            foreach (var item in departureTransferVoucherInfos)
+            {
+                item.Category = item.Category.Trim();
+                item.Name = item.Name.Trim().ToLower();
+                item.Content = item.Content.Trim().Replace("\\n", "").Replace("\\r", "");
+            }
+        }
+    }
+    var paxCount = 0;
+    var endingCreditCard = booking.CreditCardNumber.Substring(booking.CreditCardNumber.Length - 4, 4);
+
+    var productName = "Flight + Hotel";
+    if (Model.Booking.DepartureTransfer != null || Model.Booking.ArrivalTransfer != null)
+    {
+        productName += ", Transfer";
+    }
+    if (Model.Booking.Tours != null)
+    {
+        productName += ", Activities";
+    }
+
+    var isUserB2B = Model.IsB2B;
+
+}
+<link rel="stylesheet" href="https://etihad-staging.goquo.vn/css/fonts.css">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        font-family: "AltisBook",arial, helvetica, sans-serif;
+    }
+
+    strong, h1, h2, h3, h4, h5, h6, th {
+        font-family: "AltisMedium",arial, helvetica, sans-serif;
+        font-weight: normal;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+        body > table {
+            margin: 0;
+            padding: 0;
+        }
+
+    .has-bottom-margin {
+        margin-bottom: 20px;
+    }
+
+    .pdf-branding h3 {
+        background-color: #270015;
+        color: #fff;
+        padding: 10px;
+        display: inline-block;
+        margin-bottom: -25px;
+        text-transform: uppercase;
+        border-top-left-radius: 10px;
+    }
+
+    .pdf-branding__logo {
+        margin-bottom: 5px;
+        max-height: 62px;
+    }
+
+    .pdf-branding__horizontal-line {
+        border-bottom: 2px solid #270015;
+    }
+
+    .pdf-summary th, .pdf-summary td {
+        padding: 2px 6px;
+    }
+
+    .pdf-summary__price {
+        vertical-align: top;
+    }
+
+        .pdf-summary__price p {
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .pdf-summary__price h3 {
+            font-size: 24px;
+            text-transform: uppercase;
+            color: #c4921b;
+        }
+
+    .pdf-detail.type-2 > thead > tr > th {
+        background-color: #e2e2e2;
+        color: #000;
+    }
+
+    .pdf-detail td {
+        background: #e2e2e2;
+    }
+
+    .pdf-detail th, .pdf-detail td {
+        padding: 6px;
+    }
+
+    .pdf-detail > thead > tr > th {
+        background-color: #270015;
+        color: #fff;
+        font-size: 25px;
+        text-transform: uppercase;
+    }
+
+    .pdf-detail.info > thead > tr > th {
+        background-color: #c4921b;
+    }
+
+    .pdf-detail > tbody > tr > td {
+        padding: 20px;
+    }
+
+    .pdf-detail__sub.text-center {
+        text-align: center;
+    }
+
+    .pdf-detail__sub td {
+        background-color: #fff;
+        max-width: 200px;
+        vertical-align: top;
+    }
+
+    .pdf-detail__sub > thead > tr > th {
+        font-size: 22px;
+        font-style: italic;
+    }
+
+    .pdf-detail__sub.type-2 h2 {
+        color: #c4921b;
+    }
+
+    .pdf-detail__sub.type-3 ul {
+        list-style: none;
+        margin: 15px 0;
+    }
+
+        .pdf-detail__sub.type-3 ul li {
+            line-height: 25px;
+            padding-left: 15px;
+        }
+
+    .pdf-detail__sub.intro tr td img {
+        height: 80px;
+        display: inline-block;
+        margin: 15px auto;
+    }
+
+    .pdf-detail__sub.intro tr td p {
+        margin-bottom: 5px;
+    }
+
+    .pdf-detail__sub.intro tr td {
+        text-align: center;
+    }
+
+    .pdf-detail__sub.note tr td {
+        padding: 15px 15px 5px 15px;
+    }
+
+        .pdf-detail__sub.note tr td p {
+            margin-bottom: 10px;
+        }
+
+    .text-right {
+        text-align: right;
+    }
+
+    .text-left {
+        text-align: left;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .has-bottom-border {
+        border-bottom: 2px solid #e2e2e2;
+    }
+
+    .has-top-border {
+        border-top: 2px solid #e2e2e2;
+    }
+
+    .page-break {
+        display: block;
+        page-break-before: always;
+    }
+</style>
+
+<table class="pdf-branding has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr class="pdf-branding__horizontal-line">
+            <th class="text-left">
+                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/logo.png" alt="Etihad logo" class="pdf-branding__logo" />
+            </th>
+            <th class="text-right">
+                <h3>Flight Confirmation</h3>
+            </th>
+        </tr>
+    </thead>
+</table>
+
+<table class="pdf-summary has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td>
+                <table border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td>
+                                Voucher Number
+                            </td>
+                            <td>
+                                <p><strong>@Model.Booking.BookingConfirmRef</strong></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Issue Date
+                            </td>
+                            <td>
+                                <p><strong>@string.Format("{0:dd/MM/yyyy}", Model.Booking.BookingDate)</strong></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+            <td class="text-right pdf-summary__price">
+                <p>Total Paid</p>
+                <h3>@booking.Currency @booking.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</h3>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<table class="pdf-detail has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Flight Itinerary
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <table class="pdf-detail__sub" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr class="has-bottom-border">
+                            <td colspan="2">
+                                <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <strong>Departure Flight</strong>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        @foreach (var leg in outboundFlightLegs)
+                        {
+                            <tr>
+                                <td>
+                                    <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                        <tbody>
+                                            <tr>
+                                                <td width="50%">
+                                                    <strong>Departure Date</strong>
+                                                </td>
+                                                <td>
+                                                    @leg.DepartureDate.ToString("dddd, dd MMM yyyy")
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>Flight Number</strong>
+                                                </td>
+                                                <td>
+                                                    @Model.OutboundFlight.AirlineCode @leg.FlightNumber
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>Departure At:</strong>
+                                                </td>
+                                                <td>
+                                                    <strong>@leg.DepartureDate.ToString("HH:mm")</strong>
+                                                    @leg.DepartureAirportName, @leg.DepartureCountryName
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>Return At:</strong>
+                                                </td>
+                                                <td>
+                                                    <strong>@leg.ArrivalDate.ToString("HH:mm")</strong>
+
+                                                    @leg.ArrivalAirportName, @leg.ArrivalCountryName
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        @if (Model.Booking.InboundFlight != null)
+        {
+            <tr>
+                <td>
+                    <table class="pdf-detail__sub" border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                            <tr class="has-bottom-border">
+                                <td colspan="2">
+                                    <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <strong>Return Flight</strong>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                            @foreach (var leg in inboundFlightLegs)
+                            {
+                                <tr>
+                                    <td>
+                                        <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td width="50%">
+                                                        <strong>Return Date</strong>
+                                                    </td>
+                                                    <td>
+                                                        @leg.DepartureDate.ToString("dddd, dd MMM yyyy")
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Flight Number</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.InboundFlight.AirlineCode @leg.FlightNumber
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Departure At:</strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>@leg.DepartureDate.ToString("HH:mm")</strong>
+                                                        @leg.DepartureAirportName, @leg.DepartureCountryName
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Arrival At</strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>@leg.ArrivalDate.ToString("HH:mm")</strong>
+                                                        @leg.ArrivalAirportName, @leg.ArrivalCountryName
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<table class="pdf-detail has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Guest Details
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <table class="pdf-detail__sub text-center" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <th><strong>#</strong></th>
+                            <th><strong>Name</strong></th>
+                            <th><strong>Flight Number</strong></th>
+                            <th><strong>Seat</strong></th>
+                            <th><strong>Baggage</strong></th>
+                            <th><strong>Insurance</strong></th>
+                        </tr>
+                        @{
+                            var legs = new List<Leg>();
+                            if (outboundFlight != null)
+                            {
+                                legs.AddRange(outboundFlightLegs);
+                            }
+
+                            if (inboundFlight != null)
+                            {
+                                legs.AddRange(inboundFlightLegs);
+                            }
+
+                            var insurance = booking.Insurance != null ? "Yes" : "No";
+                        }
+                        @for (int i = 0; i < Model.Booking.Passengers.Count; i++)
+                        {
+                            var departureBaggage = new BookingFlightAddon();
+                            var returnBaggage = new BookingFlightAddon();
+                            var departureSportEquipment = false;
+                            var returnSportEquipment = false;
+                            if (booking.Addons != null && booking.Addons.Any())
+                            {
+                                departureBaggage = booking.Addons.FirstOrDefault(x => x.AddonType == AddonType.Baggage && x.PaxNo == Model.Booking.Passengers[i].Order && x.From == outboundFlight.From);
+                                returnBaggage = booking.Addons.FirstOrDefault(x => x.AddonType == AddonType.Baggage && x.PaxNo == Model.Booking.Passengers[i].Order && x.From == inboundFlight.From);
+
+                                departureSportEquipment = booking.Addons.Any(x => x.AddonType == AddonType.SportEquipment && x.PaxNo == Model.Booking.Passengers[i].Order && x.From == outboundFlight.From);
+                                returnSportEquipment = booking.Addons.Any(x => x.AddonType == AddonType.SportEquipment && x.PaxNo == Model.Booking.Passengers[i].Order && x.From == inboundFlight.From);
+                            }
+                            for (var j = 0; j < outboundFlightLegs.Count; j++)
+                            {
+                                var meals = booking.Addons.Where(x => x.AddonType == AddonType.Meal && x.PaxNo == Model.Booking.Passengers[i].Order && x.From == outboundFlightLegs[j].DepartureAirportCode);
+                                var seat = booking.Seats.FirstOrDefault(x => x.PaxNo == Model.Booking.Passengers[i].Order && x.From == outboundFlightLegs[j].DepartureAirportCode);
+                                int freeBaggage = 0;
+                                var freeBaggageAdult = outboundFlightLegs[j].BaggageWeight;
+                                var freeBaggageChild = outboundFlightLegs[j].ChildBaggageWeight;
+                                var freeBaggageInfant = outboundFlightLegs[j].InfantBaggageWeight;
+                                if (Model.Booking.Passengers[i].PassengerType == "Adult") { freeBaggage = freeBaggageAdult; }
+                                if (Model.Booking.Passengers[i].PassengerType == "Child") { freeBaggage = freeBaggageChild; }
+                                if (Model.Booking.Passengers[i].PassengerType == "Infant") { freeBaggage = freeBaggageInfant; }
+
+                                if (j == 0)
+                                {
+                                    <tr>
+                                        <td rowspan="@legs.Count">
+                                            @(i + 1)
+                                        </td>
+                                        <td rowspan="@legs.Count">
+                                            @Model.Passengers[i].Title.ToUpper() @Model.Passengers[i].FirstName.ToUpper() @Model.Passengers[i].LastName.ToUpper()
+                                        </td>
+                                        <td>@outboundFlightLegs[j].FlightNumber</td>
+                                        <td>@(seat != null ? seat.SeatName : "-")</td>
+                                        <td>@((departureBaggage != null && !string.IsNullOrEmpty(departureBaggage.Name)) ? departureBaggage.Name : "0 kg") @(freeBaggage > 0 ? freeBaggage + " kg" : "")</td>
+                                        <td rowspan="@legs.Count">@insurance</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td>@outboundFlightLegs[j].FlightNumber</td>
+                                        <td>@(seat != null ? seat.SeatName : "-")</td>
+                                        <td>@((departureBaggage != null && !string.IsNullOrEmpty(departureBaggage.Name)) ? departureBaggage.Name : "0 kg") @(freeBaggage > 0 ? freeBaggage + " kg" : "")</td>
+                                    </tr>
+                                }
+                            }
+                            foreach (var leg in inboundFlightLegs)
+                            {
+                                var meals = booking.Addons.Where(x => x.AddonType == AddonType.Meal && x.PaxNo == Model.Booking.Passengers[i].Order && x.From == leg.DepartureAirportCode);
+                                var seat = booking.Seats.FirstOrDefault(x => x.PaxNo == Model.Booking.Passengers[i].Order && x.From == leg.DepartureAirportCode);
+                                int freeBaggage = 0;
+                                var freeBaggageAdult = leg.BaggageWeight;
+                                var freeBaggageChild = leg.ChildBaggageWeight;
+                                var freeBaggageInfant = leg.InfantBaggageWeight;
+                                if (Model.Booking.Passengers[i].PassengerType == "Adult") { freeBaggage = freeBaggageAdult; }
+                                if (Model.Booking.Passengers[i].PassengerType == "Child") { freeBaggage = freeBaggageChild; }
+                                if (Model.Booking.Passengers[i].PassengerType == "Infant") { freeBaggage = freeBaggageInfant; }
+                                <tr>
+                                    <td>
+                                        @leg.FlightNumber
+                                    </td>
+                                    <td>
+                                        @(seat != null ? seat.SeatName : "-")
+                                    </td>
+                                    <td>@((returnBaggage != null && !string.IsNullOrEmpty(returnBaggage.Name)) ? returnBaggage.Name : "0 kg") @(freeBaggage > 0 ? freeBaggage + " kg" : "")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<table class="pdf-detail has-bottom-margin type-2" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td>
+                <h4 class="text-center">&copy; Copyright 2018 Etihad Holiday Limited.</h4>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p style="page-break-after:always;"></p>
+
+<table class="pdf-branding has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr class="pdf-branding__horizontal-line">
+            <th class="text-left">
+                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/logo.png" alt="Etihad logo" class="pdf-branding__logo" />
+            </th>
+            <th class="text-right">
+                <h3>Flight Confirmation</h3>
+            </th>
+        </tr>
+    </thead>
+</table>
+<table class="pdf-detail info has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Check-in times
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <table class="pdf-detail__sub intro" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td width="20%">
+                                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/pdf-icons/icon-carry-on-baggage%20.png" alt="">
+                                <p><strong>Carry On Baggage</strong></p>
+                                <p>7kg plus one personal item</p>
+                            </td>
+                            <td width="20%">
+                                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/pdf-icons/icon-check-in.png" alt="">
+                                <p><strong>Check-in</strong></p>
+                                <p>Counter check-in closes 1 hour before departure time, Airport Express in -town check–in closes 1.5 hours before departure time</p>
+                            </td>
+                            <td width="20%">
+                                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/pdf-icons/icon-gates-open.png" alt="">
+                                <p><strong>Gates Open</strong></p>
+                                <p>40 minutes before departure</p>
+                            </td>
+                            <td width="20%">
+                                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/pdf-icons/icon-gate-close.png" alt="">
+                                <p><strong>Gates Close</strong></p>
+                                <p>20 minutes before departure</p>
+                            </td>
+                            <td width="20%">
+                                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/pdf-icons/icon-flight-departs.png" alt="">
+                                <p><strong>Flight Departs</strong></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<table class="pdf-detail info has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Important Reminder
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <table class="pdf-detail__sub note" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td class="text-left">
+                                <p><strong>Before your flight, here's some information to keep you worry-free:</strong></p>
+                                <p>Each guest is allowed one cabin bag with a maximum weight of 7kg, plus one personal item. Any excess weight or items will have to be checked in, and checked baggage fees will apply. Hong Kong International Airport check-in counters open 3 hours prior to and close 1 hour before scheduled time of departure. Airport Express in-town check-in opens 1 day prior to and closes 1.5 hours before scheduled time of departure. Note: Your flight may arrive earlier depending on wind/weather conditions on day of travel</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<table class="pdf-detail has-bottom-margin type-2" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td>
+                <h4 class="text-center">&copy; Copyright 2018 Etihad Holiday Limited.</h4>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p style="page-break-after:always;"></p>
+
+<table class="pdf-branding has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr class="pdf-branding__horizontal-line">
+            <th class="text-left">
+                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/logo.png" alt="Etihad logo" class="pdf-branding__logo" />
+            </th>
+            <th class="text-right">
+                <h3>Hotel Confirmation</h3>
+            </th>
+        </tr>
+    </thead>
+</table>
+
+<table class="pdf-summary has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td>
+                <table border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td>
+                                Hotel Name
+                            </td>
+                            <td>
+                                <p><strong>@hotel.Name</strong></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Hotel Address
+                            </td>
+                            <td>
+                                <p><strong>@hotel.Address</strong></p>
+                            </td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.Booking.Hotels[0].Telephone))
+                        {
+                            <tr>
+                                <td>
+                                    Hotel Contact Number:
+                                </td>
+                                <td>
+                                    <p><strong>@hotel.Telephone</strong></p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+            <td class="text-right pdf-summary__price">
+                <p>Booking ID:</p>
+                <h3>@Model.Booking.Hotels[0].ProviderBookingReference / @Model.Booking.BookingConfirmRef</h3>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<table class="pdf-detail has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Room Details
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (byte i = 0; i < hotel.HotelRooms.Count; i++)
+        {
+            var availableRoom = hotel.HotelRooms.ElementAt(i);
+            <tr>
+                <td>
+                    <table class="pdf-detail__sub" border="0" cellpadding="0" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th class="text-left">#Room @(i + 1)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td width="50%">
+                                    <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                        <tbody>
+                                            <tr>
+                                                <td width="50%">
+                                                    <strong>Room Type</strong>
+                                                </td>
+                                                <td>
+                                                    @Raw(availableRoom.Description)
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>Number of Guest / Room</strong>
+                                                </td>
+                                                <td>
+                                                    @availableRoom.Adults Adult
+                                                    @{var childtext = availableRoom.Children > 0 ? availableRoom.Children + "Children" : "";}
+                                                    @childtext
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                                <td>
+                                    <table border="0" cellpadding="0" cellspacing="0">
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <strong>Board Basis</strong>
+                                                </td>
+                                                <td>
+                                                    @Raw(availableRoom.BoardCodeDescription)
+                                                </td>
+                                            </tr>
+                                            @if (!string.IsNullOrEmpty(availableRoom.ConfirmationNumber))
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <strong>Room Confirmation Number</strong>
+                                                    </td>
+                                                    <td>
+                                                        @availableRoom.ConfirmationNumber
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr class="has-top-border">
+                                <td colspan="2">
+                                    <table border="0" cellpadding="0" cellspacing="0">
+                                        <tbody>
+                                            <tr>
+                                                <td width="25%">
+                                                    <strong>Cancellation Policy</strong>
+                                                </td>
+                                                <td>
+                                                    <p>
+                                                        @if (availableRoom.CancelFreeBeforeDate > DateTime.MinValue)
+                                                        {
+                                                            <em>
+                                                                No cancellation allowed after @availableRoom.CancelFreeBeforeDate?.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
+                                                                <span style="display: block;">* Cancellation is based on Hotel Cancellation Policy</span>
+                                                            </em>
+                                                        }
+                                                        else
+                                                        {
+                                                            <em>This booking is Non-Refundable and cannot be amended or modified. Failure to arrive at your hotel will be treated as a No-Show and no refund will be given (Hotel policy).</em>
+                                                        }
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<table class="pdf-detail has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Guest Details
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <table class="pdf-detail__sub text-center" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <th><strong>#</strong></th>
+                            <th><strong>Name</strong></th>
+                            <th><strong>Guest Type</strong></th>
+                        </tr>
+                        @for (int i = 0; i < Model.Booking.Passengers.Count; i++)
+                        {
+                            <tr>
+                                <td>@(i + 1).</td>
+                                <td>@Model.Passengers[i].Title.ToUpper() @Model.Passengers[i].FirstName.ToUpper() @Model.Passengers[i].LastName.ToUpper()</td>
+                                <td>@Model.Passengers[i].PassengerType</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<table class="pdf-detail info has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Hotel Cancellation Policy
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <table class="pdf-detail__sub note" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td class="text-left">
+                                <p><em>This booking is Non-Refundable and cannot be amended or modified. Failure to arrive at your hotel will be treated as a No-Show and no refund will be given (Hotel policy).</em></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+@if (Model.Booking.Tours != null && Model.Booking.Tours.Count > 0)
+{
+    int index = 1;
+    <table class="pdf-detail has-bottom-margin type-2" border="0" cellpadding="0" cellspacing="0">
+        <tbody>
+            <tr>
+                <td>
+                    <h4 class="text-center">&copy; Copyright 2018 Etihad Holiday Limited.</h4>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <p style="page-break-after:always;"></p>
+    <table class="pdf-branding has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+        <thead>
+            <tr class="pdf-branding__horizontal-line">
+                <th class="text-left">
+                    <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/logo.png" alt="Etihad logo" class="pdf-branding__logo" />
+                </th>
+                <th class="text-right">
+                    <h3>Tour Confirmation</h3>
+                </th>
+            </tr>
+        </thead>
+    </table>
+
+    <table class="pdf-detail has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+        <thead>
+            <tr>
+                <th colspan="2" class="text-left">
+                    Tour Itinerary
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var bookingTour in Model.Booking.Tours)
+            {
+                var tourIndex = Model.Booking.Tours.Count == 1 ? string.Empty : string.Format("({0})", index);
+                <tr>
+                    <td>
+                        <table class="pdf-detail__sub" border="0" cellpadding="0" cellspacing="0">
+                            <tbody>
+                                <tr class="has-bottom-border">
+                                    <td colspan="2">
+                                        <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Tour @tourIndex</strong>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td width="50%">
+                                                        <strong>Tour Supplier Name</strong>
+                                                    </td>
+                                                    <td>
+                                                        @bookingTour.ProviderName
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Name:</strong>
+                                                    </td>
+                                                    <td>
+                                                        @bookingTour.Name
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>SupplierRef:</strong>
+                                                    </td>
+                                                    <td>
+                                                        @bookingTour.ProviderReference
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Tour Date:</strong>
+                                                    </td>
+                                                    <td>
+                                                        @bookingTour.OperatorDate.ToString("dd/MM/yyyy")
+                                                    </td>
+                                                </tr>
+                                                @if (!string.IsNullOrEmpty(bookingTour.DeparturePointName))
+                                                {
+                                                    <tr>
+                                                        <td>
+                                                            <strong>Meeting/pick-up point</strong>
+                                                        </td>
+                                                        <td>
+                                                            @bookingTour.DeparturePointName
+                                                        </td>
+                                                    </tr>
+                                                }
+                                                @if (!string.IsNullOrEmpty(bookingTour.Duration))
+                                                {
+                                                    <tr>
+                                                        <td>
+                                                            <strong>Duration</strong>
+                                                        </td>
+                                                        <td>
+                                                            @bookingTour.Duration
+                                                        </td>
+                                                    </tr>
+                                                }
+                                                @if (!string.IsNullOrEmpty(bookingTour.Comments))
+                                                {
+                                                    <tr>
+                                                        <td>
+                                                            <strong>How to redeem</strong>
+                                                        </td>
+                                                        <td>
+                                                            @bookingTour.Comments
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                index++;
+            }
+        </tbody>
+    </table>
+}
+
+@if (Model.Booking.ArrivalTransfer != null || Model.Booking.DepartureTransfer != null)
+{
+    int index = 1;
+    <table class="pdf-detail has-bottom-margin type-2" border="0" cellpadding="0" cellspacing="0">
+        <tbody>
+            <tr>
+                <td>
+                    <h4 class="text-center">&copy; Copyright 2018 Etihad Holiday Limited.</h4>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <p style="page-break-after:always;"></p>
+    <table class="pdf-branding has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+        <thead>
+            <tr class="pdf-branding__horizontal-line">
+                <th class="text-left">
+                    <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/logo.png" alt="Etihad logo" class="pdf-branding__logo" />
+                </th>
+                <th class="text-right">
+                    <h3>Transfer Confirmation</h3>
+                </th>
+            </tr>
+        </thead>
+    </table>
+
+    <table class="pdf-detail has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+        <thead>
+            <tr>
+                <th colspan="2" class="text-left">
+                    Transfer Itinerary
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Booking.ArrivalTransfer != null)
+            {
+                <tr>
+                    <td>
+                        <table class="pdf-detail__sub" border="0" cellpadding="0" cellspacing="0">
+                            <tbody>
+                                <tr class="has-bottom-border">
+                                    <td colspan="2">
+                                        <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Arrival Transfer - Airport to Hotel</strong>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td width="50%">
+                                                        <strong>Transfer Booking Id</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.ArrivalTransfer.ProviderReference
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Name</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.ArrivalTransfer.VehicleName
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Transfer Supplier Name</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.ArrivalTransfer.ProviderCode
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Pick-up Date</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.ArrivalTransfer.PickUpDate.ToString("dd/MM/yyyy")
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Pick-up Time</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.ArrivalTransfer.PickUpTime
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Pick-up Point</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.ArrivalTransfer.AirportName
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Dropoff Point</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.ArrivalTransfer.HotelName
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Description</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.ArrivalTransfer.Description
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Conditions</strong>
+                                                    </td>
+                                                    <td>
+                                                        @if (Model.Booking.ArrivalTransfer.TransferConditions != null && Model.Booking.ArrivalTransfer.TransferConditions.Any())
+                                                        {
+                                                            foreach (var condition in Model.Booking.ArrivalTransfer.TransferConditions)
+                                                            {
+                                                                <span>@condition</span> <br />
+                                                            }
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                                @if (arrTransferVoucherInfos.Any())
+                                {
+                                    <tr class="has-top-border">
+                                        <td colspan="2">
+                                            <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                                <tbody>
+                                                    @foreach (var item in arrTransferVoucherInfos)
+                                                    {
+                                                        <tr>
+                                                            <td>
+                                                                @item.Name
+                                                            </td>
+                                                            <td>
+                                                                @Raw(item.Content)
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            }
+            @if (Model.Booking.DepartureTransfer != null)
+            {
+                <tr>
+                    <td>
+                        <table class="pdf-detail__sub" border="0" cellpadding="0" cellspacing="0">
+                            <tbody>
+                                <tr class="has-bottom-border">
+                                    <td colspan="2">
+                                        <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Departure Transfer - Hotel to Airport</strong>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td width="50%">
+                                                        <strong>Transfer Booking Id</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.DepartureTransfer.ProviderReference
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Name</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.DepartureTransfer.VehicleName
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Transfer Supplier Name</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.DepartureTransfer.ProviderCode
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Pick-up Date</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.DepartureTransfer.PickUpDate.ToString("dd/MM/yyyy")
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Pick-up Time</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.DepartureTransfer.PickUpTime
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Pick-up Point</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.DepartureTransfer.HotelName
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Dropoff Point</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Model.Booking.DepartureTransfer.AirportName
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Description</strong>
+                                                    </td>
+                                                    <td>
+                                                        @Raw(Model.Booking.DepartureTransfer.Description)
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <strong>Conditions</strong>
+                                                    </td>
+                                                    <td>
+                                                        @if (Model.Booking.DepartureTransfer.TransferConditions != null && Model.Booking.DepartureTransfer.TransferConditions.Any())
+                                                        {
+                                                            foreach (var condition in Model.Booking.DepartureTransfer.TransferConditions)
+                                                            {
+                                                                <span>@condition</span> <br />
+                                                            }
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                                @if (departureTransferVoucherInfos.Any())
+                                {
+                                    <tr class="has-top-border">
+                                        <td colspan="2">
+                                            <table class="pdf-detail__sub-child" border="0" cellpadding="0" cellspacing="0">
+                                                <tbody>
+                                                    @foreach (var item in departureTransferVoucherInfos)
+                                                    {
+                                                        <tr>
+                                                            <td>
+                                                                @item.Name
+                                                            </td>
+                                                            <td>
+                                                                @Raw(item.Content)
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<table class="pdf-detail has-bottom-margin type-2" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td>
+                <h4 class="text-center">&copy; Copyright 2018 Etihad Holiday Limited.</h4>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p style="page-break-after:always;"></p>
+<table class="pdf-branding has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr class="pdf-branding__horizontal-line">
+            <th class="text-left">
+                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/logo.png" alt="Etihad logo" class="pdf-branding__logo" />
+            </th>
+            <th class="text-right">
+                <h3>Payment Confirmation</h3>
+            </th>
+        </tr>
+    </thead>
+</table>
+@if (booking.ShowPriceInVoucher && isUserB2B)
+{
+    <table class="pdf-detail has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+        <thead>
+            <tr>
+                <th colspan="2" class="text-left">
+                    Price Summary
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <table class="pdf-detail__sub type-2" border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                            <tr>
+                                <td width="80%">
+                                    <p><strong>Flight + Hotel</strong></p>
+                                </td>
+                                <td class="text-center">
+                                    <h4>@Model.Currency @(taxFlightHotel.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture))</h4>
+                                </td>
+                            </tr>
+                            <tr class="has-top-border">
+                                <td>
+                                    <p><strong>Activities</strong></p>
+                                </td>
+                                <td class="text-center">
+                                    <h4>@(System.Convert.ToDecimal(taxInvoice.Activities) == decimal.Zero ? "" : Model.Currency) @(System.Convert.ToDecimal(taxInvoice.Activities) == decimal.Zero ? "0" : System.Convert.ToDecimal(taxInvoice.Activities))</h4>
+                                </td>
+                            </tr>
+                            <tr class="has-top-border">
+                                <td>
+                                    <p><strong>Transfer</strong></p>
+                                </td>
+                                <td class="text-center">
+                                    <h4>@(System.Convert.ToDecimal(taxInvoice.Transfer) == decimal.Zero ? "" : Model.Currency) @(System.Convert.ToDecimal(taxInvoice.Transfer) == decimal.Zero ? "0" : taxInvoice.Transfer)</h4>
+                                </td>
+                            </tr>
+                            <tr class="has-top-border">
+                                <td>
+                                    <p><strong>Seats</strong></p>
+                                </td>
+                                <td class="text-center">
+                                    <h4>@(System.Convert.ToDecimal(taxInvoice.Seats) == decimal.Zero ? "" : Model.Currency) @(System.Convert.ToDecimal(taxInvoice.Seats) == decimal.Zero ? "0" : taxInvoice.Seats)</h4>
+                                </td>
+                            </tr>
+                            <tr class="has-top-border">
+                                <td>
+                                    <p><strong>Baggage</strong></p>
+                                </td>
+                                <td class="text-center">
+                                    <h4>@(System.Convert.ToDecimal(taxInvoice.Baggage) == decimal.Zero ? "" : Model.Currency) @(System.Convert.ToDecimal(taxInvoice.Baggage) == decimal.Zero ? "0" : taxInvoice.Baggage)</h4>
+                                </td>
+                            </tr>
+                            @if (Model.InsurancePrice > 0)
+                            {
+                                <tr class="has-top-border">
+                                    <td>
+                                        <p><strong>Insurance</strong></p>
+                                    </td>
+                                    <td class="text-center">
+                                        <h4>@(System.Convert.ToDecimal(taxInvoice.Insurance) == decimal.Zero ? "" : Model.Currency) @(System.Convert.ToDecimal(taxInvoice.Insurance) == decimal.Zero ? "0" : taxInvoice.Insurance)</h4>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr class="has-top-border">
+                                    <td>
+                                        <p><strong>Insurance</strong></p>
+                                    </td>
+                                    <td class="text-center">
+                                        <h4>No</h4>
+                                    </td>
+                                </tr>
+                            }
+                            <tr class="has-top-border">
+                                <td>
+                                    <p><strong>Service Charge</strong></p>
+                                </td>
+                                <td class="text-center">
+                                    <h4>@(System.Convert.ToDecimal(taxInvoice.ServiceCharge) == decimal.Zero ? "" : Model.Currency) @(System.Convert.ToDecimal(taxInvoice.ServiceCharge) == decimal.Zero ? "0" : taxInvoice.ServiceCharge)</h4>
+                                </td>
+                            </tr>
+                            <tr class="has-top-border">
+                                <td>
+                                    <p><strong>Taxes</strong></p>
+                                </td>
+                                <td class="text-center">
+                                    <h4>@(System.Convert.ToDecimal(taxInvoice.GstAmount) == decimal.Zero ? "" : Model.Currency) @(System.Convert.ToDecimal(taxInvoice.GstAmount) == decimal.Zero ? "0" : taxInvoice.GstAmount)</h4>
+                                </td>
+                            </tr>
+                            @if (@booking.PromoPrice > 0)
+                            {
+                                <tr class="has-top-border">
+                                    <td>
+                                        <p><strong>Your Saving</strong></p>
+                                    </td>
+                                    <td class="text-center">
+                                        <h4>@Model.Currency @booking.PromoPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</h4>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr class="has-top-border">
+                                    <td>
+                                        <p><strong>Your Saving</strong></p>
+                                    </td>
+                                    <td class="text-center">
+                                        <h4>@Model.Currency 0</h4>
+                                    </td>
+                                </tr>
+                            }
+                            <tr class="has-top-border">
+                                <td width="50%">
+                                    <p><strong>Total Amount</strong></p>
+                                </td>
+                                <td class="text-center">
+                                    <h2>@Model.Currency @Model.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</h2>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+}
+<table class="pdf-detail has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Payment Details
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <table class="pdf-detail__sub type-2" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td width="50%">
+                                <p><strong>Payment Method</strong></p>
+                            </td>
+                            <td>
+                                <h4>@booking.CreditCardType ending in @endingCreditCard</h4>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="50%">
+                                <p><strong>Payment Date</strong></p>
+                            </td>
+                            <td>
+                                <h4>@booking.BookingDate.ToString("ddd, dd MMM yyyy")</h4>
+                            </td>
+                        </tr>
+                        <tr class="has-top-border">
+                            <td width="50%">
+                                <h3><strong>Total Amount</strong></h3>
+                            </td>
+                            <td>
+                                <h2>@Model.Currency @booking.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</h2>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<table class="pdf-detail has-bottom-margin type-2" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td>
+                <h4 class="text-center">&copy; Copyright 2018 Etihad Holiday Limited.</h4>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p style="page-break-after:always;"></p>
+
+<table class="pdf-branding has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr class="pdf-branding__horizontal-line">
+            <th class="text-left">
+                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/logo.png" alt="Etihad logo" class="pdf-branding__logo" />
+            </th>
+            <th class="text-right">
+                <h3>Tax Invoice</h3>
+            </th>
+        </tr>
+    </thead>
+</table>
+
+<table class="pdf-summary has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td>
+                <table border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td>
+                                Booking reference:
+                            </td>
+                            <td>
+                                <p><strong>@booking.BookingConfirmRef</strong></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Guest email:
+                            </td>
+                            <td>
+                                <p><strong><a href="mailto:@booking.CustomerEmail">@booking.CustomerEmail</a></strong></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Invoice Date:
+                            </td>
+                            <td>
+                                <p><strong>@booking.BookingDate.ToString("dd-MMM-yyyy")</strong></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+            <td class="text-right pdf-summary__price">
+                <p>Invoice Number:</p>
+                <h3>@booking.BookingInvoice</h3>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<table class="pdf-detail has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Tax Invoice Details
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <table class="pdf-detail__sub type-2" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td width="80%">Description of the goods/services</td>
+                            <td class="text-center">Amount in @Model.Currency</td>
+                        </tr>
+                        <tr class="has-top-border">
+                            <td width="80%">
+                                <p><strong>@productName</strong></p>
+                            </td>
+                            <td class="text-center">
+                                <h4>@booking.Currency @((booking.TotalPrice - booking.GstPrice - booking.TaxesAndFees - Model.OtherChargeMarkupPrice).ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture))</h4>
+                            </td>
+                        </tr>
+                        <tr class="has-top-border">
+                            <td>
+                                <p><strong>Other taxes and fees</strong></p>
+                            </td>
+                            <td class="text-center">
+                                <h4>@booking.Currency @booking.TaxesAndFees.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</h4>
+                            </td>
+                        </tr>
+                        <tr class="has-top-border">
+                            <td>
+                                <p><strong>UAE VAT</strong></p>
+                            </td>
+                            <td class="text-center">
+                                <h4>@booking.Currency @booking.GstPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</h4>
+                            </td>
+                        </tr>
+                        <tr class="has-top-border">
+                            <td width="50%">
+                                <p><strong>Total Amount</strong></p>
+                            </td>
+                            <td class="text-center">
+                                <h2>@booking.Currency @booking.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</h2>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<table class="pdf-detail has-bottom-margin type-2" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td>
+                <h4 class="text-center">&copy; Copyright 2018 Etihad Holiday Limited.</h4>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p style="page-break-after:always;"></p>
+
+<table class="pdf-branding has-bottom-margin" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr class="pdf-branding__horizontal-line">
+            <th class="text-left">
+                <img src="https://gqcdn.s3-ap-southeast-1.amazonaws.com/Images/Etihad/logo.png" alt="Etihad logo" class="pdf-branding__logo" />
+            </th>
+            <th class="text-right">
+                <h3>Contact Us</h3>
+            </th>
+        </tr>
+    </thead>
+</table>
+<table class="pdf-detail has-bottom-margin type-2" border="0" cellpadding="0" cellspacing="0">
+    <thead>
+        <tr>
+            <th colspan="2" class="text-left">
+                Got a question?
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <table class="pdf-detail__sub type-3" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td>
+                                <p><strong>Should you have any questions, please contact our Customer Service Hotline:</strong></p>
+                                <ul>
+                                    <li>
+                                        <p>+852 2572 1923 (Mon-Fri 0900-1800)</p>
+                                    </li>
+                                    <li>
+                                        <p>+60 1222 6091 (Non-office hour / Saturday / Sunday / Public Holiday)</p>
+                                    </li>
+                                </ul>
+
+                                <p><strong>Whats App:</strong></p>
+                                <ul>
+                                    <li>
+                                        <p>+60 12 2226 091</p>
+                                    </li>
+                                    <li>
+                                        <p>+62 815 815 3857</p>
+                                    </li>
+                                </ul>
+                                <p><strong>Skype:</strong></p>
+                                <ul>
+                                    <li>
+                                        <p>goquo.operation</p>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <h4 class="text-center">&copy; Copyright 2018 Etihad Holiday Limited.</h4>
+            </td>
+        </tr>
+    </tbody>
+</table>

@@ -84,9 +84,6 @@ table th, table td {
     background: #ccc!important;
 }
 .page-break{page-break-after: always};
-.p-0{
-    padding: 0!important;
-}
 .pb-2{
     padding-bottom: 2rem!important;
 }
@@ -156,7 +153,9 @@ table th, table td {
 .price-summary > thead > tr{
   border: none;
 }
-
+.p-0{
+    padding: 0!important;
+}
 </style>
 <table class="logo-brand">
     <thead>
@@ -173,8 +172,8 @@ table th, table td {
     </thead>
     <tbody>
         <tr>
-            <td><strong>Voucher Number : </strong>@Model.Booking.BookingConfirmRef</td>
-            <td> <strong>Booking Date : </strong>@string.Format("{0:dd/MM/yyyy}", Model.Booking.BookingDate)</td>
+            <td>Voucher Number :<strong>@Model.Booking.BookingConfirmRef</strong></td>
+            <td>Booking Date :<strong>@string.Format("{0:dd/MM/yyyy}", Model.Booking.BookingDate)</strong></td>
         </tr>
     </tbody>
 </table>
@@ -200,27 +199,26 @@ table th, table td {
                                 <table class="flight-detail__sub">
                                     <thead>
                                         <tr>
-                                            <th>Departure</th>
+                                            <th><strong>Departure</strong></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
                                             <td>@Model.OutboundFlight.DepartureDate.ToString("dddd, dd MMM yyyy")</td>
                                             <td>
-                                                <span>@Model.OutboundFlight.AirlineName </span>
                                                 <span>@Model.OutboundFlight.AirlineCode </span>
                                                 <span>@Model.OutboundFlight.FlightNumber</span>
                                             </td>
-                                            <td> <strong>Depart : </strong>
+                                            <td> <strong>Depart :</strong>
                                                 @foreach (var leg in Model.OutboundFlight.GetLegs())
                                                 {
-                                                    <span>@leg.DepartureAirportName (@leg.DepartureAirportCode) at @leg.DepartureDate.ToString("HH:mm")</span>
+                                                    <span>@leg.DepartureAirportName (@leg.DepartureAirportCode) at <strong>@leg.DepartureDate.ToString("HH:mm")</strong></span>
                                                 }
                                             </td>
-                                            <td> <strong>Arrive : </strong>
+                                            <td> <strong>Arrive :</strong>
                                                 @foreach (var leg in Model.OutboundFlight.GetLegs())
                                                 {
-                                                    <span>@leg.ArrivalAirportName (@leg.ArrivalAirportCode) at @leg.ArrivalDate.ToString("HH:mm")</span>
+                                                    <span>@leg.ArrivalAirportName (@leg.ArrivalAirportCode) at <strong>@leg.ArrivalDate.ToString("HH:mm")</strong></span>
                                                 }
                                             </td>
                                         </tr>
@@ -235,27 +233,26 @@ table th, table td {
                                     <table class="flight-detail__sub">
                                         <thead>
                                             <tr>
-                                                <th>Return</th>
+                                                <th><strong>Return</strong></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr>
                                                 <td>@Model.InboundFlight.DepartureDate.ToString("dddd, dd MMM yyy") </td>
                                                 <td>
-                                                        <span>@Model.OutboundFlight.AirlineName </span>
                                                     <span>@Model.InboundFlight.AirlineCode </span>
                                                     <span>@Model.InboundFlight.FlightNumber</span>
                                                 </td>
-                                                <td> <strong>Depart :</strong>
+                                                <td> <strong>Depart:</strong>
                                                     @foreach (var leg in Model.InboundFlight.GetLegs())
                                                     {
-                                                        <span>@leg.DepartureAirportName (@leg.DepartureAirportCode) at @leg.DepartureDate.ToString("HH:mm")</span>
+                                                        <span>@leg.DepartureAirportName (@leg.DepartureAirportCode) at <strong>@leg.DepartureDate.ToString("HH:mm")</strong></span>
                                                     }
                                                 </td>
-                                                <td> <strong>Arrive :</strong>
+                                                <td> <strong>Arrive:</strong>
                                                     @foreach (var leg in Model.InboundFlight.GetLegs())
                                                     {
-                                                        <span>@leg.ArrivalAirportName (@leg.ArrivalAirportCode) at @leg.ArrivalDate.ToString("HH:mm")</span>
+                                                        <span>@leg.ArrivalAirportName (@leg.ArrivalAirportCode) at <strong>@leg.ArrivalDate.ToString("HH:mm")</strong></span>
                                                     }
                                                 </td>
                                             </tr>
@@ -354,20 +351,25 @@ table th, table td {
                             <td>
                                 <table class="flight-detail__sub text-center">
                                     <tr>
-                                        <td width="20%"><i class="fa fa-suitcase"></i><strong>Carry	On	Baggage</strong>
+                                        <td width="20%">
+                                            <i class="fa fa-suitcase"></i>
+                                            <p><strong>Carry On Baggage</strong></p>
                                             <p>7 kg plus one personal item</p>
                                         </td>
-                                        <td width="20%"><i class="fa fa-male"></i><strong>Check-in</strong>
-                                            <p>Counter	check-in closes	1 hour before departure	time</p>
+                                        <td width="20%"><i class="fa fa-male"></i>
+                                            <p><strong>Check-in</strong></p>
+                                            <p>Counter check-in closes 1 hour before departure time</p>
                                         </td>
-                                        <td width="20%"><i class="fa fa-check"></i><strong>Gates Open</strong>
+                                        <td width="20%"><i class="fa fa-check"></i>
+                                            <p><strong>Gates Open</strong></p>
                                             <p>40 minutes before departure</p>
                                         </td>
-                                        <td width="20%"><i class="fa fa-times"></i><strong>Gates Close</strong>
+                                        <td width="20%"><i class="fa fa-times"></i>
+                                            <p><strong>Gates Close</strong></p>
                                             <p>20 minutes before departure</p>
                                         </td>
-                                        <td width="20%"><i class="fa fa-plane"></i><strong>Flight Departs</strong>
-                                            <p></p>
+                                        <td width="20%"><i class="fa fa-plane"></i>
+                                            <p><strong>Flight Departs</strong></p>
                                         </td>
                                     </tr>
                                 </table>
@@ -390,9 +392,9 @@ table th, table td {
                             <td>
                                 <table class="flight-detail__sub">
                                     <tr>
-                                        <td><strong>Before your flight, here’s some information to keep you worry-free:</strong>
-                                            <p>Each guest is allowed one cabin bag with a maximum weight of 7kg, plus one personal item. Any excess weight or items will have to be checked in, and checked baggage fees will apply. Hong Kong International Airport
-                                                check-in counters open 3 hours prior to and close 1 hour before scheduled time of departure. Airport Express in-town check-in opens 1 day prior to and closes 1.5 hours before scheduled time of departure.</p>
+                                        <td>
+                                            <p><strong>Before your flight, here’s some information to keep you worry-free:</strong></p>
+                                            <p>Each guest is allowed one cabin bag with a maximum weight of 7kg, plus one personal item. Any excess weight or items will have to be checked in, and checked baggage fees will apply. Hong Kong International Airport check-in counters open 3 hours prior to and close 1 hour before scheduled time of departure. Airport Express in-town check-in opens 1 day prior to and closes 1.5 hours before scheduled time of departure. Note: Your flight may arrive earlier depending on wind/weather conditions on day of travel</p>
                                         </td>
                                     </tr>
                                 </table>
@@ -521,8 +523,7 @@ table th, table td {
                                     <table class="flight-detail__item">
                                         <thead>
                                             <tr>
-                                                <th class="bg-fade border-fade text-main">
-                                                    <h3>Room details @(i + 1)</h3>
+                                                <th class="bg-fade border-fade text-main">Room details @(i + 1)
                                                 </th>
                                             </tr>
                                         </thead>
@@ -738,7 +739,7 @@ table th, table td {
                 </td>
             </tr>
         }
-        <tr>
+        <!-- <tr>
             <td colspan="2">
                 <table class="flight-detail__item">
                     <thead>
@@ -751,19 +752,13 @@ table th, table td {
                             <td>
                                 <table class="flight-detail__sub">
                                     <tr>
-                                        <td>Mode of Payment: AAA</td>
+                                        <td>Mode of Payment: A</td>
                                     </tr>
                                     <tr>
-                                        <td>Payment Date: AAA</td>
+                                        <td>Payment Date: A</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-large"><strong>Total: AAA</strong></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-primary">Average total amount per person : AAAAAAAAAAAAA</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-primary">Voucher issued date: AAAAAAAAAAAAA</td>
+                                        <td class="text-large"><strong>Total: A</strong></td>
                                     </tr>
                                 </table>
                             </td>
@@ -771,7 +766,7 @@ table th, table td {
                     </tbody>
                 </table>
             </td>
-        </tr>
+        </tr> -->
         <tr>
             <td colspan="2">
                 <table class="flight-detail__item">
