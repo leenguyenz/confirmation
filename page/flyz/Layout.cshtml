@@ -1,0 +1,301 @@
+﻿@using GoQuoEngine.Client
+@using Microsoft.AspNetCore.Localization
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using GoQuoEngine.Client.Models.Agents
+@using GoQuoEngine.Client.Services
+@using Fireflyz.Models
+@using Fireflyz.Services
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Mvc.Internal
+@inject IAgentBookingService AgentBookingService
+@inject IClientEngine clientEngine
+@using Microsoft.Extensions.Options;
+@inject IOptions<AppSettings> AppSettings
+
+@{
+    var requestCulture = Context.Features.Get<IRequestCultureFeature>();
+    var cultureCode = requestCulture.RequestCulture.Culture.Name;
+
+    var urlString = Context.Request.QueryString.Value;
+    var queryString = System.Web.HttpUtility.ParseQueryString(urlString);
+
+    var currency = queryString.GetValues("Currency")?.FirstOrDefault();
+
+    var paramApp = Context.Request.Cookies["isApp"];
+
+    var agentInfo = AgentBookingService.GetB2BCurrentToken();
+
+    var agentDetails = (await AgentBookingService.GetAgentInfo())?.AgentInfoResult.AgentInfoResult;
+
+    var creditInfos = (await AgentBookingService.GetCreditInfo(agentDetails?.CurrencyCode));
+
+    var languages = await clientEngine.GetLanguages();
+
+    var currencies = await clientEngine.GetCurrencies(cultureCode);
+}
+<!DOCTYPE html>
+<html lang="@cultureCode">
+<head>
+    <title>@ViewData["Title"]</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <meta name="theme-color" content="#f99d22" />
+    <link rel="icon" href="/favicon.png" />
+    <!-- Latest compiled and minified CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <link href="/css/slick.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet">
+    <environment names="Development">
+        <link rel="stylesheet" href="~/css/main.css" asp-append-version="true" />
+    </environment>
+    <environment names="Staging,Production">
+        <link rel="stylesheet" href="~/css/main.min.css" asp-append-version="true" />
+    </environment>
+    @RenderSection("headSection", required: false)
+    @{ Html.RenderPartial("HeadTrackingScripts", new ViewDataDictionary(ViewData) { { "cultureCode", cultureCode } });}
+</head>
+<body class="@ViewData["BodyCssClass"] @(paramApp == "1" ? "embed-app" : "")">
+    <!-- Header section start-->
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-6">
+                    <a class="main-logo" href="~/"><img src="~/images/logos/logo.png" alt="@T("SITE_NAME")"></a>
+                </div>
+                <div class="col-xs-3 col-sm-6 right-info">
+                    <ul class="nav navbar-nav navbar-right static-links">
+
+                        @if (currencies != null && currencies.Any() && currency != null)
+                        {
+                            <li class="dropdown-hold">
+                                <a href="javascript:void(0)" data-toggle="dropdown" class="dropdown-toggle">
+                                    <span>currency:</span> @currency <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu selectable">
+                                    @foreach (var item in currencies)
+                                    {
+                                        <li>
+                                            <a data-currency="@item.Code" href="javascript:void(0)" class='@(item.Code.Equals(currency)? "selected" : "")' title="@item.Description">
+                                                @item.Code - @item.Description
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+
+                        @if (languages != null && languages.Any())
+                        {
+                            <li class="dropdown-hold">
+                                @if (cultureCode == "en-US")
+                                {
+                                    <a href="javascript:void(0)" data-toggle="dropdown" class="dropdown-toggle">
+                                        <img class="header-flag" src="/images/english-flag.png"> @T("English") <span class="caret"></span>
+                                    </a>
+                                }
+                                <ul class="dropdown-menu selectable">
+                                    @foreach (var lang in languages)
+                                    {
+                                        <li>
+                                            <a data-culture="@lang.Code" href="javascript:void(0)" title="@lang.Name" class='@(lang.Code.Equals(cultureCode)? "selected" : "")'>
+                                                @if (lang.Code.Equals("en-US"))
+                                                {
+                                                    <img class="header-flag" src="/images/english-flag.png">
+                                                }
+                                                @lang.Name
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+
+                        <li>
+                            @if (agentInfo != null && !agentInfo.AgentName.IsNullOrEmpty())
+                            {
+                                <div class="btn-group b2b-user-info pull-right">
+                                    <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        Hi, @agentInfo.AgentName
+                                        <span class="caret"></span>
+                                    </button>
+
+                                    <div class="dropdown-menu dropdown-menu-right">
+                                        @if (creditInfos != null && creditInfos.CreditLimits.Count > 0)
+                                        {
+                                            foreach (var info in creditInfos.CreditLimits)
+                                            {
+                                                <a class="dropdown-item"><span class="label-text">Credit Limit (@info.PaymentType):</span><span class="price-tag">@($"{info.CurrencyCode} {info.AvailabilityLimit.ToString("N")}")</span></a>
+                                            }
+
+                                        }
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item btn-logout btn btn-primary btn-block" href="@Url.Action("Logout", "AgentLogin")">Logout</a>
+                                    </div>
+                                </div>
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Header section End-->
+    <!-- Body section Start-->
+    <div class="content">
+        @RenderBody()
+    </div>
+    <!-- Body section End-->
+    <!-- Footer section Start-->
+
+    <footer>
+        <div class="container">
+            <div class="footer-top">
+                <div class="row">
+                    <div class="col-12 col-sm-6 col-md-3 footer-box">
+                        <h3 class="footer-title">About us</h3>
+                        <ul class="footer-list">
+                            <li><a href="">Company profile</a></li>
+                            <li><a href="">Media Room</a></li>
+                            <li><a href="">New releases</a></li>
+                            <li><a href="">Media coverage</a></li>
+                            <li><a href="">gallery</a></li>
+                            <li><a href="">Career</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 footer-box">
+                        <h3 class="footer-title">Community</h3>
+                        <ul class="footer-list">
+                            <li><a href="">Why Firefly</a></li>
+                            <li><a href="">Airport Information</a></li>
+                            <li><a href="">Firefly Biz Zone</a></li>
+                            <li><a href="">Firefly Rewards You</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 footer-box">
+                        <h3 class="footer-title">Help</h3>
+                        <ul class="footer-list">
+                            <li><a href="">About this Site</a></li>
+                            <li><a href="">Privacy Policy</a></li>
+                            <li><a href="">Legal Notice</a></li>
+                            <li><a href="">Site Map</a></li>
+                            <li><a href="">Malaysia Aviation Commission</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 footer-box">
+                        <h3 class="footer-title">Contact Us</h3>
+                        <ul class="footer-list">
+                            <li><a href="">FAQ</a></li>
+                            <li><a href="">Contact Info</a></li>
+                        </ul>
+
+                        <h3 class="footer-title">Contact Us</h3>
+                        <ul class="footer-social">
+                            <li><a href="" target="blank"><i class="icon-facebook"></i></a></li>
+                            <li><a href="" target="blank"><i class="icon-instagram"></i></a></li>
+                            <li><a href="" target="blank"><i class="icon-twitter"></i></a></li>
+                            <li><a href="" target="blank"><i class="icon-youtube"></i></a></li>
+                        </ul>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="footer-bottom">
+
+            </div>
+
+
+
+
+            <!-- <div class="row">
+                <div class="col-sm-6 col-md-7">
+                    <p>@Html.Raw(T("FOOTER_LEFT"))</p>
+                </div>
+                <div class="col-sm-6 col-md-5">
+                    <p class="text-center">@Html.Raw(T("FOOTER_RIGHT"))</p>
+                </div>
+            </div> -->
+        </div>
+    </footer>
+
+    <!-- Footer section End-->
+    <script>
+        window.onReady = [];
+        window.addEventListener('DOMContentLoaded', function () {
+            (function ($) {
+                $(document).ready(function () {
+                    if (window.onReady && window.onReady.length > 0) {
+                        for (var i = 0; i < window.onReady.length; i++) {
+                            window.onReady[i]();
+                        }
+                    }
+                });
+                //change cultureCode
+                $("a[data-culture]").on("click", function () {
+                    var currentCulture = '@cultureCode';
+                    var culture = $(this).attr("data-culture");
+
+                    var oldCulture = 'CultureCode=' + currentCulture;
+                    var newCulture = 'CultureCode=' + culture;
+                    var returnUrl = window.location.href.replace(oldCulture, newCulture);
+                    var asd = encodeURIComponent(returnUrl);
+
+                    var url = '/change-language/' + culture + '?returnUrl=' + asd;
+                    if (oldCulture !== newCulture) {
+                        window.location = url;
+                    }
+                });
+
+                //change currency
+                $("a[data-currency]").on("click", function () {
+                    var currentCurrency = '@currency';
+                    var currency = $(this).attr("data-currency");
+                    var packageId = $("#PackageId").val();
+
+                    var oldCurrency = 'Currency=' + currentCurrency;
+                    var newCurrency = 'Currency=' + currency;
+                    var returnUrl = window.location.href.replace(oldCurrency, newCurrency);
+                    var asd = encodeURIComponent(returnUrl);
+
+                    var url = '/package/change-currency/' + packageId + '/' + currency + '?returnUrl=' + asd;
+                    if (oldCurrency !== newCurrency) {
+                        window.location = url;
+                    }
+                });
+
+            })(jQuery);
+        });
+    </script>
+    <script src="/js/jquery-2.1.1.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/moment.min.js"></script>
+    <script src="/js/bootstrap-datepicker.min.js"></script>
+    <script src="/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="/js/slick.min.js"></script>
+    <script src="/js/polyfill.min.js"></script>
+    <script src="/js/select2.min.js"></script>
+    <script src="/js/ion.rangeSlider.min.js"></script>
+    <script src="/js/typeahead.js"></script>
+    <script src="/js/jquery.linq.min.js"></script>
+    <script src="/js/bootbox.min.js"></script>
+    <script src="/js/utils.js" asp-append-version="true"></script>
+    <script src="/js/main.bundle.js" asp-append-version="true"></script>
+    <input type="hidden" value="@cultureCode" id="hdfCultureCode" />
+    @RenderSection("scripts", required: false)
+    @{ Html.RenderPartial("Alerts"); }
+    @{ Html.RenderPartial("TrackingScripts");}
+    @RenderSection("footerScripts", required: false)
+    <environment names="Production">
+        <script type="text/javascript" src="/js/exceptionless.min.js"></script>
+        <script type="text/javascript">
+            var client = exceptionless.ExceptionlessClient.default;
+            client.config.apiKey = 'ae0e7d403bd1422f9cace792bbb0493c';
+            window.exceptionlessClient = client;
+        </script>
+    </environment>
+</body>
+</html>

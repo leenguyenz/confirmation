@@ -1,0 +1,11 @@
+Dear @Model.CustomerInfo.FirstName @Model.CustomerInfo.LastName,<br/><br/>
+<br>Thank you for booking with AirAsiaGo Holidays, your preferred travel partner!<br/><br/>
+<br>We are pleased to confirm your booking and attach herewith please find your complete Itinerary.<br/>
+Please retain this e-document as a confirmed AirAsiaGo Holidays booking based  on your travel requirements.<br/><br/>
+@if(Model.IsB2B)
+{
+<p>Your payment reference ID is @Model.Booking.TransactionId. Please retain this payment reference ID in case you want to retrieve the details or reverse the transaction later.</p>
+}
+<br>Thank you and we look forward to serve to you again in the very near future!<br/><br/>
+<br>Have an enjoyable holiday!<br/><br/>
+<br>AirAsiaGo

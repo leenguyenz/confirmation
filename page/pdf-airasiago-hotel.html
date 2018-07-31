@@ -15,7 +15,7 @@
     var isShowPriceInVoucher = booking.ShowPriceInVoucher;
 
 }
-<link href="https://fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet">
+<link href="http://airasiago-staging.goquo.vn/css/fonts.css" rel="stylesheet">
 <style type="text/css">
 *{
     margin: 0;
@@ -25,7 +25,7 @@ html{
     font-size: 62.5%;
 }
 body{
-    font-family: 'Lato',Arial, Helvetica, sans-serif;
+    font-family: 'myfont';
     color: #333;
     font-size: 1.5rem;
     padding: 5rem;
@@ -78,7 +78,7 @@ table th, table td {
     margin-bottom: 5rem!important;
 }
 .logo-brand {
-  border-bottom: 4px solid #e32726;
+  border-bottom: 4px solid #2e2e2e;
 
 }
 .logo-brand__image {
@@ -89,7 +89,7 @@ table th, table td {
 }
 .logo-brand__title {
   text-align: right;
-  color: #e32726;
+  color: #2e2e2e;
   font-size: 2.2rem;
 }
 .guest-box h2 {
@@ -113,7 +113,7 @@ table th, table td {
 <table class="logo-brand pb-2 mb-1">
     <thead>
         <tr>
-            <th class="logo-brand__image"><img src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&amp;siteid=1257" alt="AirAsiaGo" /></th>
+            <th class="logo-brand__image"><img src="http://travel360-staging.goquo.vn/images/logos/logo-travel360.png" alt="AirAsiaGo" /></th>
             <th class="logo-brand__title">Hotel Information</th>
         </tr>
     </thead>
@@ -134,11 +134,11 @@ table th, table td {
     <tbody>
         <tr>
             <td width="25%"><h4>@supplierName Booking ID</h4></td>
-            <td class="text-main text-large"><strong>@hotel.ProviderBookingReference</strong></td>
+            <td class="text-large"><strong>@hotel.ProviderBookingReference</strong></td>
         </tr>
         <tr>
             <td><h4>AirAsiaGo Booking No.</h4></td>
-            <td class="text-main text-large"><strong>@booking.BookingConfirmRef</strong></td>
+            <td class="text-large"><strong>@booking.BookingConfirmRef</strong></td>
         </tr>
         @if (!string.IsNullOrEmpty(supplierName) && supplierName.ToLower().Contains("airasiago"))
         {
@@ -301,7 +301,7 @@ table th, table td {
     <table class="logo-brand pb-2 mb-3">
         <thead>
             <tr>
-                <th class="logo-brand__image"><img src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&amp;siteid=1257" alt="AirAsiaGo" /></th>
+                <th class="logo-brand__image"><img src="http://travel360-staging.goquo.vn/images/logos/logo-travel360.png" alt="AirAsiaGo" /></th>
                 <th class="logo-brand__title">Billing Details</th>
             </tr>
         </thead>
@@ -310,7 +310,7 @@ table th, table td {
         <thead>
             <tr>
                 <th>
-	 	    <h3>Booking summary</h3>
+	 	    <h3>Booking Summary</h3>
 	 	 </th>
             </tr>
         </thead>
@@ -382,7 +382,7 @@ table th, table td {
 <table class="logo-brand pb-2 mb-3">
     <thead>
         <tr>
-            <th class="logo-brand__image"><img src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&amp;siteid=1257" alt="AirAsiaGo" /></th>
+            <th class="logo-brand__image"><img src="http://travel360-staging.goquo.vn/images/logos/logo-travel360.png" alt="AirAsiaGo" /></th>
             <th class="logo-brand__title">Passenger Information</th>
         </tr>
     </thead>
@@ -510,7 +510,7 @@ table th, table td {
                 <td>For Emergencies regarding hotel bookings.</td>
             </tr>
             <tr>
-                <td class="text-large text-main">GoQuo Emergency Contact</td>
+                <td class="text-large">GoQuo Emergency Contact</td>
             </tr>
             <tr>
                 <td>

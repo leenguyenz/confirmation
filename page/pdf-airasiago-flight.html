@@ -35,8 +35,8 @@
 
     var isShowPriceInVoucher = booking.ShowPriceInVoucher;
 }
+<link href="http://airasiago-staging.goquo.vn/css/fonts.css" rel="stylesheet">
 <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
 <style type="text/css">
 *{
     margin: 0;
@@ -46,10 +46,10 @@ html{
     font-size: 62.5%;
 }
 body{
-    font-family: 'Lato',Arial, Helvetica, sans-serif;
+    font-family: 'myfont';
     color: #333;
     font-size: 1.5rem;
-    padding: 5rem;
+    padding: 3rem;
 }
 table {
     border-collapse: collapse;
@@ -103,7 +103,7 @@ table th, table td {
   color: crimson;
 }
 .text-main {
-  color: #e32726!important;
+  color: #ff0000!important;
 }
 .logo-brand__image {
   border-bottom: 1px solid #ccc;
@@ -119,18 +119,17 @@ table th, table td {
   border: 1px solid #ccc;
 }
 .flight-detail > thead > tr > th {
-  color: #e32726;
+  color: #2e2e2e;
   font-size: 2.5rem;
 }
 .flight-detail__booking {
   font-size: 1.8rem !important;
 }
 .flight-detail__item > thead > tr > th, .price-summary th {
-  background: #e32726;
+  background: #2e2e2e;
   text-align: left;
   font-size: 1.7rem;
   color: #fff;
-  border-bottom: 1px solid #333;
 }
 .flight-detail__item td {
   background: #f4f2f2;
@@ -144,7 +143,7 @@ table th, table td {
 .flight-detail__sub i {
   display: block;
   font-size: 5rem;
-  color: #e32726;
+  color: #2e2e2e;
   padding-bottom: 1rem;
 }
 .price-summary tr{
@@ -160,7 +159,7 @@ table th, table td {
 <table class="logo-brand">
     <thead>
         <tr>
-            <th class="logo-brand__image pb-2 mb-2"><img src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&amp;siteid=1257" alt="AirAsiaGo" /></th>
+            <th class="logo-brand__image pb-2 mb-2"><img src="http://travel360-staging.goquo.vn/images/logos/logo-travel360.png" alt="AirAsiaGo" /></th>
         </tr>
     </thead>
 </table>
@@ -181,7 +180,7 @@ table th, table td {
     <thead>
         <tr>
             <th class="flight-detail__title text-left">Flight Itinerary</th>
-            <th class="flight-detail__booking text-right">Booking Reference / PNR : @Model.Booking.ReservationCode</th>
+            <th class="flight-detail__booking text-right">Booking Reference / PNR : <span class="text-main">@Model.Booking.ReservationCode</span></th>
         </tr>
     </thead>
     <tbody>
@@ -204,12 +203,12 @@ table th, table td {
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td>@Model.OutboundFlight.DepartureDate.ToString("dddd, dd MMM yyyy")</td>
-                                            <td>
+                                            <td width="20%">@Model.OutboundFlight.DepartureDate.ToString("dddd, dd MMM yyyy")</td>
+                                            <td width="10%">
                                                 <span>@Model.OutboundFlight.AirlineCode </span>
                                                 <span>@Model.OutboundFlight.FlightNumber</span>
                                             </td>
-                                            <td> <strong>Depart :</strong>
+                                            <td width="35%"> <strong>Depart :</strong>
                                                 @foreach (var leg in Model.OutboundFlight.GetLegs())
                                                 {
                                                     <span>@leg.DepartureAirportName (@leg.DepartureAirportCode) at <strong>@leg.DepartureDate.ToString("HH:mm")</strong></span>
@@ -238,12 +237,12 @@ table th, table td {
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td>@Model.InboundFlight.DepartureDate.ToString("dddd, dd MMM yyy") </td>
-                                                <td>
+                                                <td width="20%">@Model.InboundFlight.DepartureDate.ToString("dddd, dd MMM yyy") </td>
+                                                <td width="10%">
                                                     <span>@Model.InboundFlight.AirlineCode </span>
                                                     <span>@Model.InboundFlight.FlightNumber</span>
                                                 </td>
-                                                <td> <strong>Depart:</strong>
+                                                <td width="35%"> <strong>Depart:</strong>
                                                     @foreach (var leg in Model.InboundFlight.GetLegs())
                                                     {
                                                         <span>@leg.DepartureAirportName (@leg.DepartureAirportCode) at <strong>@leg.DepartureDate.ToString("HH:mm")</strong></span>
@@ -410,7 +409,7 @@ table th, table td {
 <table class="logo-brand">
     <thead>
         <tr>
-            <th class="logo-brand__image pb-2 mb-2"><img src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&amp;siteid=1257" alt="AirAsiaGo" /></th>
+            <th class="logo-brand__image pb-2 mb-2"><img src="http://travel360-staging.goquo.vn/images/logos/logo-travel360.png" alt="AirAsiaGo" /></th>
         </tr>
     </thead>
 </table>
@@ -418,7 +417,7 @@ table th, table td {
     <thead>
         <tr>
             <th class="flight-detail__title text-left">Hotel Confirmations</th>
-            <th class="flight-detail__booking text-right">BookingID: @Model.Booking.Hotels[0].ProviderBookingReference / @booking.BookingConfirmRef</th>
+            <th class="flight-detail__booking text-right">BookingID: <span class="text-main">@Model.Booking.Hotels[0].ProviderBookingReference / @booking.BookingConfirmRef</span></th>
         </tr>
     </thead>
     <tbody>
@@ -626,7 +625,7 @@ table th, table td {
 <table class="logo-brand">
     <thead>
         <tr>
-            <th class="logo-brand__image pb-2 mb-2"><img src="https://www.airasiago.com.my/_dms/header/logo.svg?locale=en_MY&amp;siteid=1257" alt="AirAsiaGo" /></th>
+            <th class="logo-brand__image pb-2 mb-2"><img src="http://travel360-staging.goquo.vn/images/logos/logo-travel360.png" alt="AirAsiaGo" /></th>
         </tr>
     </thead>
 </table>
@@ -634,7 +633,7 @@ table th, table td {
     <thead>
         <tr>
             <th class="flight-detail__title text-left">Payments</th>
-            <th class="flight-detail__booking text-right">Total Paid: @Model.Currency @Model.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</th>
+            <th class="flight-detail__booking text-right">Total Paid: <span class="text-main">@Model.Currency @Model.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</span></th>
         </tr>
     </thead>
     <tbody>
@@ -730,9 +729,9 @@ table th, table td {
                                 </tr>
                             }
                             <tr>
-                                <td width="25%">Total Paid </td>
-                                <td>@Model.Currency</td>
-                                <td>@Model.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</td>
+                                <td width="25%" class="text-large text-main">Total Paid </td>
+                                <td class="text-large text-main">@Model.Currency</td>
+                                <td class="text-large text-main">@Model.TotalPrice.ToString("N" + Model.CurrencyDecimals, CultureInfo.InvariantCulture)</td>
                             </tr>
                         </tbody>
                     </table>
